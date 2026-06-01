@@ -23,6 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(statements.router)
+app.include_router(auth_router, prefix='/auth')
 
 
 @app.get("/health")
