@@ -15,11 +15,7 @@ def me(user = Depends(get_current_user)):
 def logout(user = Depends(get_current_user), authorization: str = Header(...)):
     token = authorization.split("Bearer ")[1]
     try:
-        response = supabase.auth.get_user(token)
-        if response:
-            supabase.auth.sign_out(token)
-            return {"message": "Logged out successfully"}
-        else:
-            raise HTTPException(status_code=401)
+        supabase.auth.sign_out(token)
+        return {"message": "Logged out successfully"}
     except:
         raise HTTPException(status_code=401)

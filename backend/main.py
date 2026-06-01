@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from app.core.database import supabase
 from app.router.auth import router as auth_router
 
