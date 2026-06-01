@@ -1,4 +1,62 @@
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyc
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment / secrets
 .env
+.env.local
+.env.*.local
+*.env
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+
+# Logs
+*.log
+logs/
+
+# Node / frontend (for future use)
+node_modules/
+.next/
+.nuxt/
+dist/
+.cache/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
