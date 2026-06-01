@@ -1,15 +1,12 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
-from app.services.auth import get_current_user
+from app.api.dependencies import get_current_user
 from app.core.database import supabase
 
 router = APIRouter()
 
 @router.get('/me')
 def me(user = Depends(get_current_user)):
-    return {
-        "id": user.id,
-        "email": user.email
-    }
+    return user
 
 @router.post('/logout')
 def logout(user = Depends(get_current_user), authorization: str = Header(...)):
