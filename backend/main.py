@@ -8,6 +8,8 @@ from app.api import statements
 from app.core.database import supabase
 from app.router.auth import router as auth_router
 from app.api import transactions
+from app.api import analytics
+from app.api import budget
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -26,6 +28,8 @@ app.add_middleware(
 app.include_router(statements.router)
 app.include_router(auth_router, prefix='/auth')
 app.include_router(transactions.router)
+app.include_router(analytics.router)
+app.include_router(budget.router)
 
 
 @app.get("/health")
