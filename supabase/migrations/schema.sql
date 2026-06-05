@@ -45,6 +45,25 @@ begin
 end;
 $$;
 
+-- 0. profiles (extends auth.users with app-specific data)
+create table public.profiles (
+  id                uuid primary key references auth.users(id) on delete cascade,
+  telegram_chat_id  bigint,
+  telegram_enabled  boolean not null default false,
+  updated_at        timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+create policy "profiles: owner access"
+  on public.profiles for all
+  using  (auth.uid() = id)
+  with check (auth.uid() = id);
+
+create trigger profiles_updated_at
+  before update on public.profiles
+  for each row execute procedure public.set_updated_at();
+
 
 -- 1. accounts
 --    One user → many accounts (DBS, OCBC, UOB …)
