@@ -51,7 +51,7 @@ gsap.registerPlugin(ScrollTrigger)
 
 const isLoading = ref(true)
 
-const galleryImages = Array.from({ length: 11 }, (_, i) => ({ src: `/images/${i + 1}.png`, alt: `Image ${i + 1}` }))
+const galleryImages = Array.from({ length: 11 }, (_, i) => ({ src: `/images/${i + 1}.svg`, alt: `Image ${i + 1}` }))
 
 const blockMain = ref(null)
 const blockWrapper = ref(null)
