@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+/* Switch dark mode from OS-preference to class-based so our toggle button works.
+   Tailwind v4 reads this and applies dark: variants when <html> has class="dark" */
+@custom-variant dark (&:where(.dark, .dark *));
