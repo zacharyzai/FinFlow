@@ -9,7 +9,7 @@
     <!-- ── TOP BAR ─────────────────────────────────────── -->
     <header class="flex items-center justify-between px-8 py-5">
       <div class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-full bg-[#7C9E8C]"></div>
+        <img src="/images/finflow-logo.svg" alt="FinFlow" class="w-7 h-7 object-contain" />
         <span class="text-white font-bold text-lg tracking-tight">FinFlow</span>
       </div>
 
@@ -50,7 +50,7 @@
 
           <!-- Top: wordmark -->
           <div class="flex items-center gap-2 relative z-10">
-            <div class="w-6 h-6 rounded-full bg-[#7C9E8C]"></div>
+            <img src="/images/finflow-logo.svg" alt="FinFlow" class="w-6 h-6 object-contain" />
             <span class="text-white font-bold text-base">FinFlow</span>
           </div>
 
@@ -82,11 +82,7 @@
 
             <!-- Icon mark -->
             <div class="flex justify-center mb-5">
-              <div class="w-12 h-12 rounded-2xl bg-[#7C9E8C] flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </div>
+              <img src="/images/finflow-logo.svg" alt="FinFlow" class="w-14 h-14 object-contain" />
             </div>
 
             <!-- Heading + subtext -->
