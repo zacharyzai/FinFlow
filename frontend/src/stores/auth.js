@@ -36,11 +36,20 @@ async function signUp(email, password) {
   if (error) throw error
 }
 
+async function resertPassword(email) {
+  const {error} = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `#{window.location.origin}/reset-password`})
+    if (error) {
+      throw error
+    }
+  return { user, loading, init, signIn, signUp, signOut, resetPassword }
+}
 
-  async function signOut() {
-    await supabase.auth.signOut()
-    user.value = null
-  }
+
+async function signOut() {
+  await supabase.auth.signOut()
+  user.value = null
+}
 
   return { user, loading, init, signIn, signUp, signOut }
 })
