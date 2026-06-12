@@ -146,7 +146,7 @@
 
               <!-- Forgot password -->
               <div v-if="!isSignUp" class="text-right">
-                <a href="#" class="text-xs text-zinc-400 hover:text-[#7C9E8C] transition">Forgot password?</a>
+                <RouterLink to="/forgot-password" class="text-xs text-zinc-400 hover:text-[#7C9E8C] transition">Forgot password?</RouterLink>
               </div>
 
               <!-- Error / success -->
