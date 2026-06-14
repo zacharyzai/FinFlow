@@ -113,7 +113,7 @@
                          transition duration-200 shadow-md shadow-[#7C9E8C]/30 mt-1"
                 >
                   <span v-if="loading">Sending…</span>
-                  <span v-else>Send Reset Link</span>
+                  <span v-else>Send Code</span>
                 </button>
               </form>
   
@@ -134,10 +134,12 @@
   
   <script setup>
   import { ref } from 'vue'
+  import { useRouter } from 'vue-router'
   import { useAuthStore } from '@/stores/auth'
-  
+
   const auth = useAuthStore()
-  
+  const router = useRouter()
+
   const email = ref('')
   const loading = ref(false)
   const submitted = ref(false)
@@ -170,10 +172,10 @@
     errorMsg.value = ''
     try {
       await auth.resetPassword(email.value)
-      submitted.value = true  // show success message regardless
+      router.push({ name: 'VerifyOtp', state: { email: email.value } })
     } catch (e) {
       // don't reveal whether email exists — show generic error only for network-level failures
-      errorMsg.value = 'Something went wrong. Please try again.'
+      errorMsg.value = e.message
     } finally {
       loading.value = false
     }

@@ -38,17 +38,22 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/verify-otp',
+    name: 'VerifyOtp',
+    component: () => import('@/views/VerifyOtpView.vue'),
+    meta: { requiresGuest: true },
+  },
+  {
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: () => import('@/views/ForgotPasswordView.vue'),
     meta: { requiresGuest: true },
   },
-  // {
-  //   path: '/reset-password',
-  //   name: 'ResetPassword',
-  //   component: () => import('@/views/ResetPasswordView.vue'),
-  //   meta: { requiresGuest: true },
-  // },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('@/views/ResetPasswordView.vue'),
+  },
 ]
 
 const router = createRouter({

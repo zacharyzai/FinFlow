@@ -36,20 +36,27 @@ async function signUp(email, password) {
   if (error) throw error
 }
 
-async function resertPassword(email) {
-  const {error} = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `#{window.location.origin}/reset-password`})
-    if (error) {
-      throw error
-    }
-  return { user, loading, init, signIn, signUp, signOut, resetPassword }
-}
+  async function resetPassword(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) throw error
+  }
 
+  async function verifyOtp(email, token) {
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'recovery' })
+    if (error) throw error
+  }
 
-async function signOut() {
-  await supabase.auth.signOut()
-  user.value = null
-}
+  async function updatePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
 
-  return { user, loading, init, signIn, signUp, signOut }
+  async function signOut() {
+    await supabase.auth.signOut()
+    user.value = null
+  }
+
+  return { user, loading, init, signIn, signUp, signOut, resetPassword, verifyOtp, updatePassword }
 })
