@@ -129,7 +129,7 @@ function onInput(i) {
     inputs.value[i + 1].focus()
   }
 
-  if (digits.value.every(d => d !== '')) {
+  if (digits.value.every(d => d !== '') && !loading.value) {
     submit()
   }
 }
@@ -150,7 +150,7 @@ function onPaste(e) {
   const next = Math.min(pasted.length, 5)
   inputs.value[next].focus()
 
-  if (pasted.length === 6) submit()
+  if (pasted.length === 6 && !loading.value) submit()
 }
 
 async function submit() {
