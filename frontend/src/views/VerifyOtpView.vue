@@ -33,7 +33,7 @@
           Check your email
         </h1>
         <p class="text-center text-sm text-zinc-400 dark:text-zinc-500 mb-2">
-          We sent a 6-digit code to
+          We sent an 8-digit code to
         </p>
         <p class="text-center text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-8">
           {{ email }}
@@ -52,7 +52,7 @@
             @input="onInput(i)"
             @keydown="onKeydown($event, i)"
             @paste="onPaste($event)"
-            class="w-11 h-14 text-center text-xl font-bold rounded-xl
+            class="w-9 h-12 text-center text-lg font-bold rounded-xl
                    bg-zinc-100 dark:bg-zinc-800
                    border-2 focus:border-[#7C9E8C]
                    text-zinc-900 dark:text-white
@@ -99,7 +99,7 @@ const auth = useAuthStore()
 const router = useRouter()
 
 const email = history.state.email
-const digits = ref(['', '', '', '', '', ''])
+const digits = ref(['', '', '', '', '', '', '', ''])
 const inputs = ref([])
 const loading = ref(false)
 const errorMsg = ref('')
@@ -125,7 +125,7 @@ function onInput(i) {
   // Strip anything that isn't a digit
   digits.value[i] = digits.value[i].replace(/\D/g, '').slice(0, 1)
 
-  if (digits.value[i] && i < 5) {
+  if (digits.value[i] && i < 7) {
     inputs.value[i + 1].focus()
   }
 
@@ -142,7 +142,7 @@ function onKeydown(e, i) {
 
 function onPaste(e) {
   e.preventDefault()
-  const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+  const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 8)
   pasted.split('').forEach((char, i) => {
     digits.value[i] = char
   })
@@ -150,7 +150,7 @@ function onPaste(e) {
   const next = Math.min(pasted.length, 5)
   inputs.value[next].focus()
 
-  if (pasted.length === 6 && !loading.value) submit()
+  if (pasted.length === 8 && !loading.value) submit()
 }
 
 async function submit() {
