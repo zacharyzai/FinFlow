@@ -256,3 +256,21 @@ from public.transactions t
 where t.withdrawal is not null
   and t.state = 'CLEARED'
 group by t.user_id, date_trunc('month', t.date), t.category;
+
+-- 8. profiles
+--    Extends auth.users with app-specific data (Telegram linking)
+
+create table public.profiles (
+  id                uuid primary key references auth.users(id) on delete cascade,
+  telegram_chat_id  bigint unique,
+  telegram_enabled  boolean not null default false,
+  link_token        text unique,
+  updated_at        timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+create policy "profiles: owner access"
+  on public.profiles for all
+  using  (auth.uid() = id)
+  with check (auth.uid() = id);
