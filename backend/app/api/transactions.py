@@ -1,20 +1,11 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
 from app.core.database import supabase
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
-limiter = Limiter(key_func=get_remote_address)
-
-VALID_CATEGORIES = [
-    "Food & Dining", "Transport", "Shopping", "Bills & Utilities",
-    "Healthcare", "Entertainment", "Travel", "Education",
-    "Income", "Transfer", "Other",
-]
 
 #Transactions List
 @router.get('')

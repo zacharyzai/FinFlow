@@ -14,5 +14,5 @@ def logout(user = Depends(get_current_user), authorization: str = Header(...)):
     try:
         supabase.auth.sign_out(token)
         return {"message": "Logged out successfully"}
-    except:
-        raise HTTPException(status_code=401)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Logout failed")

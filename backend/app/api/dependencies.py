@@ -1,5 +1,15 @@
 from fastapi import HTTPException, Header
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.core.database import supabase
+
+limiter = Limiter(key_func=get_remote_address)
+
+VALID_CATEGORIES = [
+    "Food & Dining", "Transport", "Shopping", "Bills & Utilities",
+    "Healthcare", "Entertainment", "Travel", "Education",
+    "Income", "Transfer", "Other",
+]
 
 
 async def get_current_user(authorization: str = Header(...)) -> dict:

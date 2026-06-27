@@ -1,24 +1,14 @@
-from datetime import date
 from calendar import monthrange
-
-from fastapi import APIRouter, Depends, Request, HTTPException
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
-from app.api.dependencies import get_current_user
-from app.core.database import supabase
-
-from pydantic import BaseModel
+from datetime import date
 from typing import Optional
 
-router = APIRouter(prefix="/budget", tags=["budget"])
-limiter = Limiter(key_func=get_remote_address)
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
 
-VALID_CATEGORIES = [
-    "Food & Dining", "Transport", "Shopping", "Bills & Utilities",
-    "Healthcare", "Entertainment", "Travel", "Education",
-    "Income", "Transfer", "Other",
-]
+from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
+from app.core.database import supabase
+
+router = APIRouter(prefix="/budget", tags=["budget"])
 
 class PlannedExpenseIn(BaseModel):
     name: str
@@ -146,29 +136,17 @@ async def daily_budget(
     )
     income = sum(float(r["credit"]) for r in income_result.data if r["credit"])
 
-    # --- Fixed Bills: planned expenses categorised as Bills & Utilities ---
-    bills_result = (
-        supabase.table("planned_expenses")
-        .select("amount")
-        .eq("user_id", user_id)
-        .eq("category", "Bills & Utilities")
-        .gte("due_date", str(month_start))
-        .lte("due_date", str(today.replace(day=days_in_month)))
-        .execute()
-    )
-    bills = sum(float(r["amount"]) for r in bills_result.data if r["amount"])
-
-    # --- Planned Expenses: everything else in planned_expenses this month ---
-    planned_result = (
+    # --- Planned Expenses: one query, split in Python ---
+    all_planned = (
         supabase.table("planned_expenses")
         .select("amount, category")
         .eq("user_id", user_id)
-        .neq("category", "Bills & Utilities")
         .gte("due_date", str(month_start))
         .lte("due_date", str(today.replace(day=days_in_month)))
         .execute()
-    )
-    planned = sum(float(r["amount"]) for r in planned_result.data if r["amount"])
+    ).data
+    bills = sum(float(r["amount"]) for r in all_planned if r["amount"] and r["category"] == "Bills & Utilities")
+    planned = sum(float(r["amount"]) for r in all_planned if r["amount"] and r["category"] != "Bills & Utilities")
 
     # --- Formula ---
     available = income - bills - planned
