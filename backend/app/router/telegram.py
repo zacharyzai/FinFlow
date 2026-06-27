@@ -28,45 +28,41 @@ async def connect_telegram(current_user: dict = Depends(get_current_user)):
 
 
 # ----------------------------------------------------------------
-# Telegram POSTs here every time a user messages the bot.
-# Handles /start <token> (linking) and /budget (budget query).
+# Shared handler — used by both polling (local) and webhook (Railway).
 # ----------------------------------------------------------------
 
-@router.post("/webhook")
-async def telegram_webhook(request: Request):
-    body = await request.json()
-
-    message = body.get("message", {})
+async def handle_update(update: dict):
+    message = update.get("message", {})
     chat_id = message.get("chat", {}).get("id")
     text = message.get("text", "").strip()
 
     if not chat_id or not text:
-        return {"ok": True}
+        return
 
     # /start <token> — link this Telegram chat to a FinFlow account
     if text.startswith("/start"):
         parts = text.split()
         if len(parts) < 2:
             await send_message(chat_id, "Open FinFlow and click *Connect Telegram* to get your link code.")
-            return {"ok": True}
+            return
 
         token = parts[1]
         result = supabase.table("profiles").select("id").eq("link_token", token).execute()
 
         if not result.data:
             await send_message(chat_id, "Invalid or expired token. Please try again from the app.")
-            return {"ok": True}
+            return
 
         user_id = result.data[0]["id"]
 
         supabase.table("profiles").update({
             "telegram_chat_id": chat_id,
             "telegram_enabled": True,
-            "link_token": None,          # burn token so it can't be reused
+            "link_token": None,
         }).eq("id", user_id).execute()
 
         await send_message(chat_id, "Connected to FinFlow! Send /budget to see your daily budget.")
-        return {"ok": True}
+        return
 
     # /budget — calculate and return the user's daily budget
     if text == "/budget":
@@ -74,7 +70,7 @@ async def telegram_webhook(request: Request):
 
         if not result.data:
             await send_message(chat_id, "Account not linked. Open FinFlow and click *Connect Telegram*.")
-            return {"ok": True}
+            return
 
         user_id = result.data[0]["id"]
         today = date.today()
@@ -111,8 +107,18 @@ async def telegram_webhook(request: Request):
             f"*Today's budget: ${daily:,.2f}*\n"
             f"({days_remaining} days remaining)"
         ))
-        return {"ok": True}
+        return
 
     # unknown command
     await send_message(chat_id, "Available commands:\n/budget — see your daily budget")
+
+
+# ----------------------------------------------------------------
+# Webhook endpoint — only used in production (Railway).
+# ----------------------------------------------------------------
+
+@router.post("/webhook")
+async def telegram_webhook(request: Request):
+    body = await request.json()
+    await handle_update(body)
     return {"ok": True}

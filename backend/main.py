@@ -1,3 +1,6 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -11,9 +14,19 @@ from app.api import transactions
 from app.api import analytics
 from app.api import budget
 from app.router import telegram
+from app.services.telegram import poll_telegram
+from app.router.telegram import handle_update
+
 limiter = Limiter(key_func=get_remote_address)
 
-app = FastAPI(title="FinFlow API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(poll_telegram(handle_update))
+    yield
+
+
+app = FastAPI(title="FinFlow API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
