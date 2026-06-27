@@ -1,0 +1,58 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img "FinFlow" [ref=e6]
+      - generic [ref=e7]: FinFlow
+    - button "Light" [active] [ref=e72]:
+      - img [ref=e73]
+      - text: Light
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - img "FinFlow" [ref=e15]
+          - generic [ref=e16]: FinFlow
+        - generic [ref=e17]:
+          - heading "Statements in. Clarity out." [level=2] [ref=e18]:
+            - text: Statements in.
+            - text: Clarity out.
+          - paragraph [ref=e19]: Upload your DBS, OCBC, or UOB statement and get instant spending insights — powered by AI.
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e25]:
+              - paragraph [ref=e26]: AI-Powered Parsing
+              - paragraph [ref=e27]: Claude reads your PDF statement and categorises every transaction instantly.
+          - generic [ref=e28]:
+            - img [ref=e30]
+            - generic [ref=e32]:
+              - paragraph [ref=e33]: Daily Budget Calculator
+              - paragraph [ref=e34]: Know exactly how much you can spend today, updated in real time.
+          - generic [ref=e35]:
+            - img [ref=e37]
+            - generic [ref=e39]:
+              - paragraph [ref=e40]: Bank-Grade Privacy
+              - paragraph [ref=e41]: Your raw statement is deleted the moment it's parsed. We store insights, not files.
+      - generic [ref=e44]:
+        - heading "Sign In" [level=1] [ref=e45]
+        - paragraph [ref=e46]: Your money, finally making sense.
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - img
+            - textbox "Email address" [ref=e49]
+          - generic [ref=e50]:
+            - img
+            - textbox "Password" [ref=e51]
+            - button [ref=e52]:
+              - img [ref=e53]
+          - link "Forgot password?" [ref=e57] [cursor=pointer]:
+            - /url: /forgot-password
+          - button "Sign In" [ref=e58]
+        - generic [ref=e61]: Or sign in with
+        - button "Continue with Google" [disabled] [ref=e63]:
+          - img [ref=e64]
+          - text: Continue with Google
+        - paragraph [ref=e69]: More options coming soon
+        - paragraph [ref=e70]:
+          - text: Don't have an account?
+          - button "Sign Up" [ref=e71]

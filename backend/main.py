@@ -1,17 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
-from app.api import statements
-from app.core.database import supabase
+from app.api import analytics, budget, statements, transactions
+from app.api.dependencies import limiter
 from app.router.auth import router as auth_router
-from app.api import transactions
-from app.api import analytics
-from app.api import budget
-
-limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(title="FinFlow API")
 app.state.limiter = limiter
@@ -35,9 +29,3 @@ app.include_router(budget.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/test-db")
-def test_db():
-    result = supabase.table("accounts").select("*").limit(1).execute()
-    return {"status": "connected", "sample": result.data}

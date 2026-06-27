@@ -7,25 +7,16 @@ import anthropic
 import pandas as pd
 import pdfplumber
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
 from app.core.config import ANTHROPIC_API_KEY
 from app.core.database import supabase
 
 router = APIRouter(prefix="/statements", tags=["statements"])
-limiter = Limiter(key_func=get_remote_address)
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 ALLOWED_MIME_TYPES = {"application/pdf", "text/csv", "application/vnd.ms-excel"}
 MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
-
-VALID_CATEGORIES = [
-    "Food & Dining", "Transport", "Shopping", "Bills & Utilities",
-    "Healthcare", "Entertainment", "Travel", "Education",
-    "Income", "Transfer", "Other",
-]
 
 # ----------------------------------------------------------------
 # Parsing helpers
