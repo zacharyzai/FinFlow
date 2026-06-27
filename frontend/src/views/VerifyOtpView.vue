@@ -1,29 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-[#2D4A47] dark:bg-[#1e3330] transition-colors duration-300">
-
-    <!-- TOP BAR -->
-    <header class="flex items-center justify-between px-8 py-5">
-      <div class="flex items-center gap-2">
-        <img src="/images/finflow-logo.svg" alt="FinFlow" class="w-7 h-7 object-contain" />
-        <span class="text-white font-bold text-lg tracking-tight">FinFlow</span>
-      </div>
-      <button
-        @click="toggleDark"
-        class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20
-               text-white text-sm transition duration-200"
-      >
-        <svg v-if="!isDark" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
-        </svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
-        </svg>
-        {{ isDark ? 'Light' : 'Dark' }}
-      </button>
-    </header>
-
-    <main class="flex-1 flex items-center justify-center p-6 pb-12">
-      <div class="w-full max-w-sm bg-white dark:bg-[#1a2433] rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.35)] p-10 transition-colors duration-300">
+  <AuthLayout>
 
         <div class="flex justify-center mb-5">
           <img src="/images/finflow-logo.svg" alt="FinFlow" class="w-14 h-14 object-contain" />
@@ -85,15 +61,14 @@
           </RouterLink>
         </p>
 
-      </div>
-    </main>
-  </div>
+  </AuthLayout>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AuthLayout from '@/components/AuthLayout.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -103,7 +78,6 @@ const digits = ref(['', '', '', '', '', '', '', ''])
 const inputs = ref([])
 const loading = ref(false)
 const errorMsg = ref('')
-const isDark = ref(false)
 const resendCooldown = ref(0)
 let cooldownTimer = null
 
@@ -147,7 +121,7 @@ function onPaste(e) {
     digits.value[i] = char
   })
   // Focus the box after the last pasted digit
-  const next = Math.min(pasted.length, 5)
+  const next = Math.min(pasted.length, 7)
   inputs.value[next].focus()
 
   if (pasted.length === 8 && !loading.value) submit()
@@ -161,7 +135,7 @@ async function submit() {
     router.push({ name: 'ResetPassword' })
   } catch (e) {
     errorMsg.value = 'Invalid or expired code. Please try again.'
-    digits.value = ['', '', '', '', '', '']
+    digits.value = Array(8).fill('')
     inputs.value[0].focus()
   } finally {
     loading.value = false

@@ -38,6 +38,24 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/budget',
+    name: 'Budget',
+    component: () => import('@/views/BudgetView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/health',
+    name: 'Health',
+    component: () => import('@/views/HealthView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/goals',
+    name: 'Goals',
+    component: () => import('@/views/GoalsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/verify-otp',
     name: 'VerifyOtp',
     component: () => import('@/views/VerifyOtpView.vue'),

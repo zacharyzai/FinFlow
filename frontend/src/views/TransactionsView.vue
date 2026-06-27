@@ -1,12 +1,14 @@
 <template>
-  <div class="layout">
+  <div class="flex min-h-screen bg-slate-50 dark:bg-[#0f1a19]">
     <AppSidebar />
-    <main>
+    <div class="flex-1 flex flex-col min-w-0">
       <AppHeader title="Transactions" />
-      <div v-if="store.loading">Loading...</div>
-      <p v-else-if="store.error" class="error">{{ store.error }}</p>
-      <TransactionTable v-else :transactions="store.transactions" />
-    </main>
+      <main class="flex-1 p-6">
+        <div v-if="store.loading" class="text-slate-400 text-sm">Loading...</div>
+        <p v-else-if="store.error" class="text-red-400 text-sm">{{ store.error }}</p>
+        <TransactionTable v-else :transactions="store.transactions" />
+      </main>
+    </div>
   </div>
 </template>
 
