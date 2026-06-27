@@ -2,11 +2,6 @@
   <AuthLayout :panel="true">
     <div>
 
-            <!-- Icon mark -->
-            <div class="flex justify-center mb-5">
-              <img src="/images/finflow-logo.svg" alt="FinFlow" class="w-14 h-14 object-contain" />
-            </div>
-
             <!-- Heading + subtext -->
             <h1 class="text-2xl font-bold text-center text-zinc-900 dark:text-white mb-1">
               {{ isSignUp ? 'Create account' : 'Sign In' }}

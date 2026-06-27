@@ -13,6 +13,19 @@
 
     <h2 class="text-sm font-semibold text-slate-900 dark:text-white flex-1">{{ title }}</h2>
 
+    <!-- Command palette trigger — teaches users the keyboard shortcut -->
+    <button
+      @click="paletteOpen = true"
+      class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10
+             text-slate-400 text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors duration-150"
+    >
+      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <span>Go to...</span>
+      <kbd class="font-mono text-[10px] bg-slate-100 dark:bg-white/5 px-1 rounded">⌘K</kbd>
+    </button>
+
     <div class="flex items-center gap-3">
       <!-- Dark / light toggle -->
       <button
@@ -47,8 +60,11 @@ import { useDark, useToggle } from '@vueuse/core'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { useSidebar } from '@/composables/useSidebar'
+import { usePalette } from '@/composables/usePalette'
 
 defineProps({ title: String })
+
+const { open: paletteOpen } = usePalette()
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)

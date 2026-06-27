@@ -101,3 +101,14 @@ const NAV = [
   },
 ]
 </script>
+
+<style scoped>
+/* Stagger nav items on mount — plays once since sidebar stays mounted across routes */
+li { animation: fade-up 220ms var(--ease-out) both; }
+li:nth-child(1) { animation-delay: 30ms; }
+li:nth-child(2) { animation-delay: 60ms; }
+li:nth-child(3) { animation-delay: 90ms; }
+li:nth-child(4) { animation-delay: 120ms; }
+li:nth-child(5) { animation-delay: 150ms; }
+li:nth-child(6) { animation-delay: 180ms; }
+</style>

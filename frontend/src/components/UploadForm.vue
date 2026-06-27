@@ -1,8 +1,8 @@
 <template>
   <!-- Progress overlay while parsing -->
-  <div v-if="loading" class="bg-[#1a2e2b] border border-[#7C9E8C]/20 rounded-2xl p-8">
-    <p class="text-white font-semibold mb-1">Processing your statement…</p>
-    <p class="text-slate-400 text-sm mb-8">This can take 10–15 seconds while Claude reads each transaction.</p>
+  <div v-if="loading" class="bg-white dark:bg-[#1a2e2b] border border-slate-200 dark:border-[#7C9E8C]/20 rounded-2xl p-8">
+    <p class="text-slate-900 dark:text-white font-semibold mb-1">Processing your statement…</p>
+    <p class="text-slate-500 dark:text-slate-400 text-sm mb-8">This can take 10–15 seconds while Claude reads each transaction.</p>
     <div class="space-y-5">
       <div v-for="(step, i) in STEPS" :key="step.label" class="flex items-center gap-4">
         <div
@@ -19,10 +19,10 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
           <!-- Pending -->
-          <div v-else class="w-2 h-2 rounded-full bg-slate-500" />
+          <div v-else class="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500" />
         </div>
         <div>
-          <p class="text-sm font-medium transition-colors" :class="i <= currentStep ? 'text-white' : 'text-slate-500'">
+          <p class="text-sm font-medium transition-colors" :class="i <= currentStep ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'">
             {{ step.label }}
           </p>
           <p class="text-xs text-slate-500">{{ step.description }}</p>
@@ -35,7 +35,7 @@
   <form v-else @submit.prevent="handleSubmit" class="space-y-6">
     <!-- Bank selector -->
     <div>
-      <label class="block text-sm font-medium text-slate-300 mb-3">Bank</label>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Bank</label>
       <div class="grid grid-cols-4 gap-2">
         <button
           v-for="b in BANKS"
@@ -45,7 +45,7 @@
           class="py-2.5 rounded-lg border text-sm font-medium transition-all"
           :class="bank === b.value
             ? 'border-[#7C9E8C] bg-[#7C9E8C]/10 text-[#7C9E8C]'
-            : 'border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'"
+            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-white'"
         >
           {{ b.label }}
         </button>
@@ -54,14 +54,14 @@
 
     <!-- Drop zone -->
     <div>
-      <label class="block text-sm font-medium text-slate-300 mb-3">Statement file</label>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Statement file</label>
       <div
         class="relative border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer"
         :class="dragOver
           ? 'border-[#7C9E8C] bg-[#7C9E8C]/10'
           : file
             ? 'border-[#7C9E8C]/50 bg-[#7C9E8C]/5'
-            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'"
+            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600'"
         @dragover.prevent="dragOver = true"
         @dragleave="dragOver = false"
         @drop.prevent="onDrop"
@@ -78,7 +78,7 @@
               </svg>
             </div>
             <div class="text-left">
-              <p class="text-sm font-medium text-white truncate max-w-xs">{{ file.name }}</p>
+              <p class="text-sm font-medium text-slate-900 dark:text-white truncate max-w-xs">{{ file.name }}</p>
               <p class="text-xs text-slate-400 mt-0.5">{{ fileSize }} · Click to change</p>
             </div>
           </div>
@@ -86,12 +86,12 @@
 
         <!-- Empty state -->
         <template v-else>
-          <div class="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center mx-auto mb-4">
+          <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
             <svg class="w-6 h-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
             </svg>
           </div>
-          <p class="text-sm font-medium text-white mb-1">Drop your statement here</p>
+          <p class="text-sm font-medium text-slate-900 dark:text-white mb-1">Drop your statement here</p>
           <p class="text-xs text-slate-500">or click to browse · PDF or CSV · DBS, OCBC, UOB</p>
         </template>
       </div>
@@ -109,7 +109,7 @@
       class="w-full py-3 rounded-xl text-sm font-semibold transition-all"
       :class="file
         ? 'bg-[#7C9E8C] hover:bg-[#6a8f7c] text-white cursor-pointer'
-        : 'bg-slate-800 text-slate-500 cursor-not-allowed'"
+        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'"
     >
       Parse with Claude AI
     </button>
@@ -151,9 +151,7 @@ const fileSize = computed(() => {
 })
 
 function stepCircleClass(i) {
-  if (i < currentStep.value) return 'bg-[#7C9E8C]/20 text-[#7C9E8C]'
-  if (i === currentStep.value) return 'bg-[#7C9E8C]/20 text-[#7C9E8C]'
-  return 'bg-slate-700 text-slate-500'
+  return i <= currentStep.value ? 'bg-[#7C9E8C]/20 text-[#7C9E8C]' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
 }
 
 function onFile(e) {

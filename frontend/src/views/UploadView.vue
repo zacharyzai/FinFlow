@@ -4,7 +4,7 @@
     <div class="flex-1 flex flex-col min-w-0">
       <AppHeader title="Upload Statement" />
       <main class="flex-1 flex items-start justify-center px-6 py-10">
-        <div class="w-full max-w-xl">
+        <div class="w-full max-w-xl" style="animation: fade-up 280ms var(--ease-out) both">
           <div class="mb-8">
             <h1 class="text-xl font-semibold text-slate-900 dark:text-white mb-2">Import your bank statement</h1>
             <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">

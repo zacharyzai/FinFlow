@@ -1,10 +1,6 @@
 <template>
   <AuthLayout>
 
-        <div class="flex justify-center mb-5">
-          <img src="/images/finflow-logo.svg" alt="FinFlow" class="w-14 h-14 object-contain" />
-        </div>
-
         <h1 class="text-2xl font-bold text-center text-zinc-900 dark:text-white mb-1">
           Check your email
         </h1>
@@ -28,7 +24,7 @@
             @input="onInput(i)"
             @keydown="onKeydown($event, i)"
             @paste="onPaste($event)"
-            class="w-9 h-12 text-center text-lg font-bold rounded-xl
+            class="w-11 h-14 text-center text-lg font-bold rounded-xl
                    bg-zinc-100 dark:bg-zinc-800
                    border-2 focus:border-[#7C9E8C]
                    text-zinc-900 dark:text-white
@@ -89,11 +85,6 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(cooldownTimer)
 })
-
-function toggleDark() {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
-}
 
 function onInput(i) {
   // Strip anything that isn't a digit
