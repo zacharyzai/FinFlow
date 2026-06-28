@@ -13,7 +13,7 @@
               <span class="text-[#7C9E8C]">the raw file is deleted immediately after parsing.</span>
             </p>
           </div>
-          <UploadForm @uploaded="router.push('/transactions')" />
+          <UploadStatement @uploaded="router.push('/transactions')" />
         </div>
       </main>
     </div>
@@ -24,7 +24,7 @@
 import { useRouter } from 'vue-router'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import UploadForm from '@/components/UploadForm.vue'
+import UploadStatement from '@/views/UploadStatement.vue'
 
 const router = useRouter()
 
