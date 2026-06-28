@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api import analytics, budget, statements, transactions
+from app.api import analytics, budget, health, statements, transactions
 from app.api.dependencies import limiter
 from app.router.auth import router as auth_router
 
@@ -24,6 +24,7 @@ app.include_router(auth_router, prefix='/auth')
 app.include_router(transactions.router)
 app.include_router(analytics.router)
 app.include_router(budget.router)
+app.include_router(health.router)
 
 
 @app.get("/health")
