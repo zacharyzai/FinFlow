@@ -4,10 +4,89 @@
    Tailwind v4 reads this and applies dark: variants when <html> has class="dark" */
 @variant dark (&:where(.dark, .dark *));
 
-/* Emil Kowalski easing curves — stronger than the built-in CSS easings */
+/* ──────────────────────────────────────────
+   FinFlow design tokens (light / dark)
+   Matches the Claude Design handoff palette
+   ────────────────────────────────────────── */
 :root {
+  --bg: #EBE7D6;
+  --bg-blur: rgba(235,231,214,.82);
+  --surface: #FAF8F0;
+  --surface-2: #ECE7D6;
+  --surface-3: #F1ECDD;
+  --border: #D9D3BD;
+  --border-strong: #C7C0A4;
+  --text: #1C403B;
+  --text-2: #46584F;
+  --text-3: #8B9087;
+  --brand: #2D4A47;
+  --brand-strong: #1C403B;
+  --on-brand: #F2EFE3;
+  --sage: #7C9E8C;
+  --logo-back: #7C9E8C;
+  --logo-front: #2D4A47;
+  --good: #1F7A52;
+  --good-bg: #E2EEE4;
+  --good-bd: #BCDCC6;
+  --warn: #9A6A12;
+  --warn-bg: #F1E9D2;
+  --warn-bd: #E0CF9E;
+  --bad: #A83E33;
+  --bad-bg: #F1E1DC;
+  --bad-bd: #E0C1B8;
+  --chart-bar: #2D4A47;
+  --stk1: #1C403B; --stk2: #345C52; --stk3: #4E7568;
+  --stk4: #6F9082; --stk5: #9BB1A4; --stk6: #C2CDBF; --stk7: #DDD7C2;
+
+  /* Emil Kowalski easing curves */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.dark {
+  --bg: #1C403B;
+  --bg-blur: rgba(28,64,59,.82);
+  --surface: #234A44;
+  --surface-2: #2C564F;
+  --surface-3: #2A524B;
+  --border: #335A50;
+  --border-strong: #42685D;
+  --text: #EBE7D6;
+  --text-2: #B6C2B8;
+  --text-3: #849A8F;
+  --brand: #7C9E8C;
+  --brand-strong: #9CBBA8;
+  --on-brand: #12302B;
+  --sage: #7C9E8C;
+  --logo-back: #7C9E8C;
+  --logo-front: #DDE7DD;
+  --good: #69BD93;
+  --good-bg: #22443A;
+  --good-bd: #356A52;
+  --warn: #DEB05B;
+  --warn-bg: #3C3E2E;
+  --warn-bd: #585231;
+  --bad: #E08C80;
+  --bad-bg: #412F2A;
+  --bad-bd: #6A4640;
+  --chart-bar: #7C9E8C;
+  --stk1: #EBE7D6; --stk2: #C6D1C3; --stk3: #A5B5A9;
+  --stk4: #859A8C; --stk5: #657C6F; --stk6: #4C6357; --stk7: #3A5046;
+}
+
+/* Smooth token transitions when switching themes */
+* { transition: background-color .25s ease, border-color .25s ease, color .2s ease; }
+
+/* FinFlow shimmer (parsing progress bar) */
+@keyframes finflowShimmer {
+  0%   { background-position: 0 0; }
+  100% { background-position: 200px 0; }
+}
+
+/* FinFlow pulse (live indicators) */
+@keyframes finflowPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .3; }
 }
 
 /* Entrance animation — fade + lift */
@@ -23,7 +102,7 @@ button:not(:disabled):active {
 }
 
 /* Base font */
-body { font-family: 'Inter', sans-serif; }
+body { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 
 /* Route page transitions — 150ms enter, 100ms exit (Emil: exit faster than enter) */
 .page-enter-active { transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out); }

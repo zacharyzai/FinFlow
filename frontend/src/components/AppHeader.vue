@@ -1,79 +1,115 @@
 <template>
-  <header class="flex items-center gap-4 px-6 py-4 bg-white dark:bg-[#0f1a19] border-b border-slate-200 dark:border-white/5 shrink-0">
-    <!-- Sidebar toggle — plain hamburger, sidebar state is the visual feedback -->
-    <button
-      @click="isOpen = !isOpen"
-      class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-white transition-colors duration-150 shrink-0"
-      aria-label="Toggle sidebar"
-    >
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/>
-      </svg>
-    </button>
-
-    <h2 class="text-sm font-semibold text-slate-900 dark:text-white flex-1">{{ title }}</h2>
-
-    <!-- Command palette trigger — teaches users the keyboard shortcut -->
-    <button
-      @click="paletteOpen = true"
-      class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10
-             text-slate-400 text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors duration-150"
-    >
-      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-      </svg>
-      <span>Go to...</span>
-      <kbd class="font-mono text-[10px] bg-slate-100 dark:bg-white/5 px-1 rounded">⌘K</kbd>
-    </button>
-
-    <div class="flex items-center gap-3">
-      <!-- Dark / light toggle -->
-      <button
-        @click="toggleDark()"
-        class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-white transition-colors duration-150"
-        :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-      >
-        <!-- Sun: shown in dark mode (click to go light) -->
-        <svg v-if="isDark" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/>
-        </svg>
-        <!-- Moon: shown in light mode (click to go dark) -->
-        <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/>
-        </svg>
+  <header class="ff-topbar">
+    <div>
+      <div class="ff-topbar-title">{{ title }}</div>
+      <div class="ff-topbar-sub">{{ subtitle }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <!-- Search — opens command palette -->
+      <div style="position:relative;display:flex;align-items:center">
+        <span class="material-symbols-outlined ff-search-icon">search</span>
+        <input
+          placeholder="Search transactions"
+          class="ff-search-input"
+          @click="paletteOpen = true"
+          readonly
+        />
+      </div>
+      <!-- Month filter -->
+      <button class="ff-btn-ghost">
+        <span class="material-symbols-outlined" style="font-size:18px;line-height:1">calendar_today</span>
+        {{ currentMonth }}
       </button>
-
-      <span class="text-sm text-slate-500 hidden sm:block">{{ auth.user?.email }}</span>
-      <button
-        @click="handleSignOut"
-        class="px-3 py-1.5 text-sm font-medium rounded-full border border-slate-300 dark:border-slate-700
-               text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors duration-150"
-      >
-        Sign out
-      </button>
+      <!-- Upload CTA -->
+      <router-link to="/upload" class="ff-btn-primary">
+        <span class="material-symbols-outlined" style="font-size:18px;line-height:1">upload_file</span>
+        Upload statement
+      </router-link>
     </div>
   </header>
 </template>
 
 <script setup>
-import { useDark, useToggle } from '@vueuse/core'
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
-import { useSidebar } from '@/composables/useSidebar'
+import { computed } from 'vue'
 import { usePalette } from '@/composables/usePalette'
 
-defineProps({ title: String })
+defineProps({ title: { type: String, default: 'Dashboard' } })
 
 const { open: paletteOpen } = usePalette()
 
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
-const auth = useAuthStore()
-const router = useRouter()
-const { isOpen } = useSidebar()
-
-async function handleSignOut() {
-  await auth.signOut()
-  router.push('/login')
-}
+const currentMonth = computed(() =>
+  new Date().toLocaleString('en-SG', { month: 'long' })
+)
 </script>
+
+<style scoped>
+.ff-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 64px;
+  background: var(--bg-blur);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ff-topbar-title {
+  font: 600 18px 'IBM Plex Sans';
+  letter-spacing: -.3px;
+  color: var(--text);
+}
+.ff-topbar-sub {
+  font: 400 12px 'IBM Plex Sans';
+  color: var(--text-3);
+  margin-top: 1px;
+}
+.ff-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 18px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+.ff-search-input {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 12px 8px 34px;
+  font: 400 13px 'IBM Plex Sans';
+  width: 210px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+}
+.ff-search-input:focus { border-color: var(--brand); }
+.ff-btn-ghost {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 7px;
+  padding: 8px 11px;
+  font: 500 13px 'IBM Plex Sans';
+  cursor: pointer;
+}
+.ff-btn-ghost:hover { background: var(--surface-3); color: var(--text); }
+.ff-btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  background: var(--brand);
+  color: var(--on-brand);
+  border-radius: 7px;
+  padding: 9px 14px;
+  font: 600 13px 'IBM Plex Sans';
+  cursor: pointer;
+  text-decoration: none;
+}
+.ff-btn-primary:hover { background: var(--brand-strong); }
+</style>
