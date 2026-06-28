@@ -26,4 +26,15 @@ export const statementsApi = {
   },
 }
 
+export const analyticsApi = {
+  categories: (params) => api.get('/analytics/categories', { params }),
+  spendingOverTime: (params) => api.get('/analytics/spending-over-time', { params }),
+  anomalies: (params) => api.get('/analytics/anomalies', { params }),
+}
+
+export const budgetApi = {
+  daily: () => api.get('/budget/daily'),
+  upcoming: () => api.get('/budget/upcoming'),
+}
+
 export default api

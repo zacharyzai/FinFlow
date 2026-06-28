@@ -10,20 +10,17 @@
         <div class="ff-stat-strip">
           <div class="ff-stat-cell">
             <div class="ff-stat-label">Monthly income</div>
-            <div class="ff-stat-value">$5,200</div>
-            <div class="ff-badge ff-badge--good">
-              <span class="material-symbols-outlined" style="font-size:15px">arrow_upward</span>3.2% vs May
-            </div>
+            <div class="ff-stat-value">{{ fmt(income) }}</div>
           </div>
           <div class="ff-stat-cell">
             <div class="ff-stat-label">Spent this cycle</div>
-            <div class="ff-stat-value">$3,260</div>
-            <div class="ff-stat-meta">62% of income · 18 days</div>
+            <div class="ff-stat-value">{{ fmt(spentThisCycle) }}</div>
+            <div class="ff-stat-meta">{{ spentPct }}% of income · {{ daysElapsed }} days</div>
           </div>
           <div class="ff-stat-cell">
             <div class="ff-stat-label">Safe daily budget</div>
-            <div class="ff-stat-value" style="color:var(--good)">$162</div>
-            <div class="ff-stat-meta">12 days remaining</div>
+            <div class="ff-stat-value" style="color:var(--good)">{{ fmt(dailyBudget) }}</div>
+            <div class="ff-stat-meta">{{ daysRemaining }} days remaining</div>
           </div>
           <div class="ff-stat-cell">
             <div class="ff-stat-label">Health score</div>
@@ -172,8 +169,8 @@
               <!-- Bar chart + category breakdown -->
               <div style="flex:2;min-width:340px">
                 <div style="position:relative;height:200px;padding-top:18px">
-                  <div class="ff-avg-line"></div>
-                  <div class="ff-avg-label">avg $3,250</div>
+                  <div class="ff-avg-line" :style="`bottom:${avgPct}%`"></div>
+                  <div class="ff-avg-label" :style="`bottom:${avgPct}%`">avg {{ fmt(avgSpend) }}</div>
                   <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;height:100%">
                     <div v-for="bar in chartBars" :key="bar.month" class="ff-bar-col">
                       <span class="ff-bar-val" :class="bar.current ? 'ff-bar-val--active' : ''">{{ bar.val }}</span>
@@ -187,8 +184,8 @@
                 <!-- Category breakdown -->
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
                   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
-                    <div style="font:600 12px 'IBM Plex Sans';color:var(--text)">May spending by category</div>
-                    <div style="font:600 12px 'IBM Plex Mono';color:var(--text-2)">$3,210</div>
+                    <div style="font:600 12px 'IBM Plex Sans';color:var(--text)">{{ currentMonthName }} spending by category</div>
+                    <div style="font:600 12px 'IBM Plex Mono';color:var(--text-2)">{{ fmt(totalSpent) }}</div>
                   </div>
                   <div class="ff-category-bar">
                     <div v-for="cat in categories" :key="cat.label" :style="`width:${cat.pct}%;background:${cat.color}`"></div>
@@ -220,7 +217,7 @@
                     <div class="ff-sigma-badge" :class="tx.level === 'bad' ? 'ff-sigma--bad' : 'ff-sigma--warn'">{{ tx.sigma }}</div>
                   </div>
                 </div>
-                <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:12px">3 of 142 transactions flagged this cycle.</div>
+                <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:12px">{{ anomalies.length }} transactions flagged this cycle.</div>
               </div>
             </div>
           </section>
@@ -267,20 +264,20 @@
               <!-- Spendable pool -->
               <div style="width:280px;flex-shrink:0;border-left:1px solid var(--border);padding-left:28px;display:flex;flex-direction:column">
                 <div style="font:600 12px 'IBM Plex Sans';color:var(--text)">Remaining spendable pool</div>
-                <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:2px;margin-bottom:14px">Cycle resets 1 Jul</div>
+                <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:2px;margin-bottom:14px">Cycle resets {{ nextMonthName }}</div>
 
                 <div v-for="row in poolRows" :key="row.label" style="display:flex;justify-content:space-between;padding:7px 0;font:500 12.5px 'IBM Plex Sans';color:var(--text-2)">
                   {{ row.label }}
                   <span style="font-family:'IBM Plex Mono'" :style="`color:${row.color || 'var(--text)'}`">{{ row.val }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:3px;border-top:1px dashed var(--border-strong);font:600 13px 'IBM Plex Sans';color:var(--text)">
-                  Spendable pool<span style="font-family:'IBM Plex Mono'">$1,940</span>
+                  Spendable pool<span style="font-family:'IBM Plex Mono'">{{ fmt(available) }}</span>
                 </div>
 
                 <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:8px;text-align:center">
-                  <div style="font:500 11px 'IBM Plex Sans';color:var(--text-3)">$1,940 ÷ 12 days remaining</div>
+                  <div style="font:500 11px 'IBM Plex Sans';color:var(--text-3)">{{ fmt(available) }} ÷ {{ daysRemaining }} days remaining</div>
                   <div style="margin-top:4px">
-                    <span style="font:600 34px 'IBM Plex Mono';letter-spacing:-1px;color:var(--good)">$162</span>
+                    <span style="font:600 34px 'IBM Plex Mono';letter-spacing:-1px;color:var(--good)">{{ fmt(dailyBudget) }}</span>
                     <span style="font:500 13px 'IBM Plex Sans';color:var(--text-3)"> / day</span>
                   </div>
                   <div class="ff-on-track">
@@ -299,12 +296,30 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import { useDashboardStore } from '@/stores/dashboard'
 
-// ── Health score ──────────────────────────────────────────────
-// ponytail: static demo value; wire to health_scores store when API is ready
+const store = useDashboardStore()
+onMounted(() => store.load())
+
+// ── Helpers ───────────────────────────────────────────────────
+const fmt = n => '$' + Math.round(n).toLocaleString('en')
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const STK_COLORS = ['var(--stk1)','var(--stk2)','var(--stk3)','var(--stk4)','var(--stk5)','var(--stk6)','var(--stk7)']
+
+// ── Stat strip ────────────────────────────────────────────────
+const income = computed(() => store.budget?.breakdown.income ?? 0)
+const spentThisCycle = computed(() => store.categories.total_spent ?? 0)
+const dailyBudget = computed(() => store.budget?.daily_budget ?? 0)
+const daysRemaining = computed(() => store.budget?.breakdown.days_remaining ?? 0)
+const daysElapsed = computed(() => new Date().getDate())
+const spentPct = computed(() => income.value ? Math.round(spentThisCycle.value / income.value * 100) : 0)
+const available = computed(() => store.budget?.breakdown.available ?? 0)
+
+// ── Health score (no API endpoint yet) ───────────────────────
+// ponytail: static; wire to health_scores endpoint in Phase 2
 const score = 78
 const C = 439.823
 const scoreOffset = computed(() => (C * (1 - score / 100)).toFixed(1))
@@ -318,8 +333,8 @@ const dimensions = [
   { label: 'Budget adherence',   val: 73, color: 'var(--good)' },
 ]
 
-// ── Parsing widget ────────────────────────────────────────────
-// ponytail: static demo; wire to upload store progress when real upload is wired
+// ── Parsing widget (demo UI) ──────────────────────────────────
+// ponytail: static demo; wire to upload store progress when upload flow is connected
 const parsingPct = 68
 const parseSteps = [
   { label: 'Uploaded',       state: 'done',    num: '1' },
@@ -328,38 +343,75 @@ const parseSteps = [
   { label: 'Ledger write',   state: 'pending', num: '4' },
 ]
 
-// ── Analytics ─────────────────────────────────────────────────
-const chartBars = [
-  { month: 'Jan', val: '3,120', pct: 78 },
-  { month: 'Feb', val: '2,980', pct: 74 },
-  { month: 'Mar', val: '3,340', pct: 83 },
-  { month: 'Apr', val: '3,580', pct: 89 },
-  { month: 'May', val: '3,210', pct: 80 },
-  { month: 'Jun', val: '1,980*', pct: 49, current: true },
-]
+// ── Analytics: bar chart ──────────────────────────────────────
+const chartBars = computed(() => {
+  if (!store.monthlyTrend.length) return []
+  const maxVal = Math.max(...store.monthlyTrend.map(p => p.total), 1)
+  const now = new Date()
+  return store.monthlyTrend.map(p => {
+    const [yr, mo] = p.date.split('-')
+    const isCurrent = +yr === now.getFullYear() && +mo - 1 === now.getMonth()
+    const month = new Date(+yr, +mo - 1, 1).toLocaleString('en', { month: 'short' })
+    const val = Math.round(p.total).toLocaleString('en')
+    return { month, val: isCurrent ? `${val}*` : val, pct: Math.round(p.total / maxVal * 100), current: isCurrent }
+  })
+})
 
-const categories = [
-  { label: 'Food & Dining', amount: '$880',  pct: 27.4, color: 'var(--stk1)' },
-  { label: 'Groceries',     amount: '$520',  pct: 16.2, color: 'var(--stk2)' },
-  { label: 'Shopping',      amount: '$560',  pct: 17.4, color: 'var(--stk3)' },
-  { label: 'Transport',     amount: '$410',  pct: 12.8, color: 'var(--stk4)' },
-  { label: 'Utilities',     amount: '$410',  pct: 12.8, color: 'var(--stk5)' },
-  { label: 'Healthcare',    amount: '$245',  pct:  7.6, color: 'var(--stk6)' },
-  { label: 'Others',        amount: '$185',  pct:  5.8, color: 'var(--stk7)' },
-]
+const avgSpend = computed(() => {
+  if (!store.monthlyTrend.length) return 0
+  return store.monthlyTrend.reduce((s, p) => s + p.total, 0) / store.monthlyTrend.length
+})
 
-const anomalies = [
-  { name: 'ParkwayHealth', cat: 'Healthcare', date: '12 Jun', amount: '$245.00', sigma: '2.4σ', level: 'bad' },
-  { name: 'Shopee',        cat: 'Shopping',   date: '09 Jun', amount: '$389.00', sigma: '2.1σ', level: 'warn' },
-  { name: 'Grab',          cat: 'Transport',  date: '05 Jun', amount: '$112.40', sigma: '2.6σ', level: 'bad' },
-]
+const avgPct = computed(() => {
+  if (!store.monthlyTrend.length) return 79
+  const maxVal = Math.max(...store.monthlyTrend.map(p => p.total), 1)
+  return Math.round(avgSpend.value / maxVal * 100)
+})
+
+// ── Analytics: categories ─────────────────────────────────────
+const categories = computed(() =>
+  (store.categories.categories ?? []).map((c, i) => ({
+    label: c.category,
+    amount: fmt(c.total),
+    pct: c.percentage,
+    color: STK_COLORS[i % STK_COLORS.length],
+  }))
+)
+
+const totalSpent = computed(() => store.categories.total_spent ?? 0)
+
+const currentMonthName = computed(() => {
+  const now = new Date()
+  return `${MONTHS[now.getMonth()]} ${now.getFullYear()}`
+})
+
+// ── Analytics: anomalies ──────────────────────────────────────
+const anomalies = computed(() =>
+  (store.anomalies ?? []).slice(0, 5).map(a => {
+    const [, mo, day] = a.date.split('-')
+    return {
+      name: a.description,
+      cat: a.category,
+      date: `${+day} ${MONTHS[+mo - 1]}`,
+      amount: `$${(+a.withdrawal).toFixed(2)}`,
+      sigma: `${a.sigma}σ`,
+      level: a.sigma >= 2.5 ? 'bad' : 'warn',
+    }
+  })
+)
 
 // ── Budget calendar ───────────────────────────────────────────
 const calCells = computed(() => {
+  // ponytail: statusMap is static (no per-day budget endpoint); planned events are live
   const statusMap = { 1:'g',2:'g',3:'w',4:'o',5:'g',6:'g',7:'w',8:'g',9:'g',10:'w',11:'o',12:'g',13:'g',14:'o',15:'g',16:'g',17:'w',18:'o' }
-  const plannedMap = { 24:['Insurance','$180'], 27:['Concert','$260'], 30:['Phone','$65'] }
   const colorMap = { g: 'var(--good)', w: 'var(--warn)', o: 'var(--bad)' }
   const today = new Date().getDate()
+
+  const plannedMap = {}
+  for (const e of (store.upcoming ?? [])) {
+    const day = +e.due_date.split('-')[2]
+    plannedMap[day] = [e.name, fmt(e.amount)]
+  }
 
   const cells = [{ key: 'blank', blank: true, cellBg: 'transparent', cellBorder: '1px solid transparent' }]
   for (let n = 1; n <= 30; n++) {
@@ -385,12 +437,21 @@ const calLegend = [
   { label: 'Planned expense', style: 'display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--surface-2);border:1px solid var(--border-strong)' },
 ]
 
-const poolRows = [
-  { label: 'Income',            val: '+5,200', color: 'var(--good)' },
-  { label: 'Fixed bills',       val: '−1,840' },
-  { label: 'Planned expenses',  val: '−620' },
-  { label: 'Savings goal',      val: '−800' },
-]
+// ── Spendable pool ────────────────────────────────────────────
+const poolRows = computed(() => {
+  const b = store.budget?.breakdown
+  if (!b) return []
+  return [
+    { label: 'Income',           val: `+${Math.round(b.income).toLocaleString('en')}`,           color: 'var(--good)' },
+    { label: 'Fixed bills',      val: `−${Math.round(b.fixed_bills).toLocaleString('en')}` },
+    { label: 'Planned expenses', val: `−${Math.round(b.planned_expenses).toLocaleString('en')}` },
+  ]
+})
+
+const nextMonthName = computed(() => {
+  const now = new Date()
+  return `1 ${MONTHS[(now.getMonth() + 1) % 12]}`
+})
 </script>
 
 <style scoped>
@@ -613,13 +674,11 @@ const poolRows = [
 .ff-avg-line {
   position: absolute;
   left: 0; right: 0;
-  bottom: 79%;
   border-top: 1px dashed var(--border-strong);
 }
 .ff-avg-label {
   position: absolute;
   right: 0;
-  bottom: 79%;
   transform: translateY(-100%);
   font: 500 10px 'IBM Plex Mono';
   color: var(--text-3);

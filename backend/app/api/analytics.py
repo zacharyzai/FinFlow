@@ -165,9 +165,10 @@ async def detect_anomalies(
 
     anomalies = df[df["withdrawal"] > df["threshold"]].copy()
     anomalies["amount_above"] = (anomalies["withdrawal"] - anomalies["mean"]).round(2)
+    anomalies["sigma"] = ((anomalies["withdrawal"] - anomalies["mean"]) / anomalies["std"].replace(0, 1)).round(1)
 
     return {
-        "anomalies": anomalies[["id", "date", "description", "category", "withdrawal", "amount_above"]]
+        "anomalies": anomalies[["id", "date", "description", "category", "withdrawal", "amount_above", "sigma"]]
         .sort_values("withdrawal", ascending=False)
         .to_dict(orient="records")
     }
