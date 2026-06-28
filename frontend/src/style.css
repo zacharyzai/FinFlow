@@ -31,10 +31,92 @@ body { font-family: 'Inter', sans-serif; }
 .page-enter-from   { opacity: 0; transform: translateY(6px); }
 .page-leave-to     { opacity: 0; transform: translateY(-3px); }
 
+/* --- Login micro-interactions --- */
+
+/* Tactile input lift: container scales 0.5% on focus — transform only, no reflow */
+.input-group { transition: transform 180ms var(--ease-out); }
+.input-group:focus-within { transform: scale(1.005); }
+
+/* swap — heading/subtext and sign-up toggle crossfade on mode switch */
+.swap-enter-active { transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out); }
+.swap-leave-active { transition: opacity 100ms var(--ease-out), transform 100ms var(--ease-out); }
+.swap-enter-from   { opacity: 0; transform: translateY(5px); }
+.swap-leave-to     { opacity: 0; transform: translateY(-4px); }
+
+/* icon-swap — password eye icon and CTA label ↔ loading dots */
+.icon-swap-enter-active { transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out); }
+.icon-swap-leave-active { transition: opacity 70ms var(--ease-out), transform 70ms var(--ease-out); }
+.icon-swap-enter-from   { opacity: 0; transform: scale(0.8); }
+.icon-swap-leave-to     { opacity: 0; transform: scale(0.8); }
+
+/* slide-down — error, success, forgot-password link appear/disappear */
+/* Enter: slides down from above. Exit: retreats back upward — reverses the entry vector. */
+.slide-down-enter-active { transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+.slide-down-leave-active { transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out); }
+.slide-down-enter-from   { opacity: 0; transform: translateY(-6px); }
+.slide-down-leave-to     { opacity: 0; transform: translateY(-4px); }
+
+/* Loading dots in CTA button */
+/* ease-in-out (CSS standard) not --ease-in-out: the aggressive cubic-bezier distorts the
+   loop seam — the dots snap harshly at every cycle boundary. ease-in-out is gentle. */
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: translateY(0);    opacity: 0.35; }
+  40%           { transform: translateY(-3px); opacity: 1;    }
+}
+.loading-dot {
+  display: inline-block;
+  font-size: 7px;
+  line-height: 1;
+  animation: bounce-dot 1.2s ease-in-out infinite;
+}
+
+/* --- Upload micro-interactions --- */
+
+/* Phase swap — form ↔ processing ↔ success */
+.phase-swap-enter-active { transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+.phase-swap-leave-active { transition: opacity 120ms var(--ease-out), transform 100ms var(--ease-out); }
+.phase-swap-enter-from   { opacity: 0; transform: translateY(10px); }
+.phase-swap-leave-to     { opacity: 0; transform: translateY(-6px); }
+
+/* Zone content — idle ↔ file-selected crossfade inside the drop zone */
+.zone-content-enter-active { transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out); }
+.zone-content-leave-active { transition: opacity 100ms var(--ease-out); }
+.zone-content-enter-from   { opacity: 0; transform: translateY(6px); }
+.zone-content-leave-to     { opacity: 0; }
+
+/* Active processing step: horizontal shimmer sweep (replaces spinner) */
+@keyframes shimmer-sweep {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+.step-shimmer {
+  background: linear-gradient(90deg,
+    transparent 20%,
+    rgba(124, 158, 140, 0.09) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 2s linear infinite;
+}
+
+/* Universal stroke draw — used for step checkmarks and the success circle+tick.
+   Each element sets --stroke-length to its own path length. */
+@keyframes draw-stroke {
+  from { stroke-dashoffset: var(--stroke-length, 20); }
+  to   { stroke-dashoffset: 0; }
+}
+
 /* Honour reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  /* bounce-dot's from-keyframe is opacity:0.35 — the global duration:0.01ms rule freezes
+     the dots there, making the loading CTA look broken. Override to show them at full opacity. */
+  .loading-dot {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
