@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
 from app.core.database import supabase
+from pydantic import BaseModel
+
+from app.api.statements import _get_or_create_account
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -55,5 +58,44 @@ async def list_transactions(
         },
     }
 
-    
+# POST Request for Transaction (For the user to input their transactions)
 
+class TransactionIn(BaseModel):
+    date: str
+    amount: float
+    description: str
+    category: str
+    type: str # 'withdrawal' or 'credit'
+
+@router.post('')
+@limiter.limit("30/minute")
+async def create_transaction(
+    request: Request,
+    body: TransactionIn,                    # the form data the user submitted
+    current_user: dict = Depends(get_current_user),  # who is logged in
+):
+    # Step 1: validate category
+    if body.category not in VALID_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Invalid category")
+
+    # Step 2: decide which column gets the amount
+    # Like a light switch — it's either withdrawal OR credit, never both
+    withdrawal = body.amount if body.type == 'withdrawal' else None
+    credit     = body.amount if body.type == 'credit'     else None
+
+    # Step 3: build the record — like filling in a form before handing it to the database
+    record = {
+        "user_id":     current_user["id"],  # who owns this transaction
+        "account_id":  _get_or_create_account(current_user["id"], "Manual"),                 # we'll talk about this
+        "date":        body.date,
+        "description": body.description,
+        "category":    body.category,       
+        "withdrawal":  withdrawal,      
+        "credit":      credit,
+        "state":       "PENDING",           # always starts as PENDING                                                                                                                                   
+    }                                       
+                                                                                                                                                                                                        
+    # Step 4: insert into Supabase — same as mongoose's .save()                                                                                                                                        
+    result = supabase.table("transactions").insert(record).execute()                                                                                                                                     
+
+    return result.data[0]
