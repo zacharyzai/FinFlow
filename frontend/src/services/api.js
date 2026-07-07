@@ -16,7 +16,7 @@ api.interceptors.request.use(async (config) => {
 })
 
 export const statementsApi = {
-  upload(data) {
+  upload(file, bank) {
     const form = new FormData()
     form.append('file', file)
     form.append('bank', bank)

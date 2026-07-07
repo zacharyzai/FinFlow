@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase } from '@/services/supabase'
+import { transactionApi } from '@/services/api'
 import { useAuthStore } from './auth'
 
 export const useTransactionsStore = defineStore('transactions', () => {
@@ -47,5 +48,15 @@ export const useTransactionsStore = defineStore('transactions', () => {
     transactions.value = data
   }
 
-  return { transactions, loading, error, byCategory, totalSpend, totalIncome, fetch }
+  // Writes go through FastAPI (not Supabase directly) so the server can create
+  // the double-entry ledger rows and set state to PENDING. Then re-fetch so the
+  // table shows exactly what the DB contains.
+  // Errors deliberately bubble up to the caller — the modal shows them inline,
+  // instead of setting store.error (which would replace the whole table).
+  async function add(tx) {
+    await transactionApi.create(tx)
+    await fetch()
+  }
+
+  return { transactions, loading, error, byCategory, totalSpend, totalIncome, fetch, add }
 })

@@ -80,6 +80,10 @@ create table public.transactions (
   updated_at  timestamptz not null default now(),
   constraint chk_one_direction check (
     (withdrawal is null) != (credit is null)
+  ),
+  constraint chk_positive_amounts check (
+    (withdrawal is null or withdrawal > 0) and
+    (credit     is null or credit     > 0)
   )
 );
 
@@ -180,6 +184,16 @@ create table public.reconciliation_log (
 );
 
 
+-- Grants (lock #1: may this role touch the table at all?)
+-- RLS policies below (lock #2) then filter WHICH rows.
+-- service_role (FastAPI) gets full access and bypasses RLS.
+
+grant usage on schema public to anon, authenticated, service_role;
+grant all    on all tables in schema public to service_role;
+grant select on all tables in schema public to authenticated;
+grant insert, update, delete
+  on public.planned_expenses, public.savings_goals to authenticated;
+
 -- Row Level Security
 
 alter table public.accounts           enable row level security;
@@ -190,20 +204,28 @@ alter table public.savings_goals      enable row level security;
 alter table public.health_scores      enable row level security;
 alter table public.reconciliation_log enable row level security;
 
-create policy "accounts: owner access"
-  on public.accounts for all
-  using  (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+-- Financial tables: browser may READ own rows only.
+-- Writes go through FastAPI (service role key, bypasses RLS) so the server
+-- enforces the double-entry ledger and state machine — a DevTools user
+-- cannot insert unbalanced or pre-CLEARED rows.
 
-create policy "transactions: owner access"
-  on public.transactions for all
-  using  (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+create policy "accounts: owner read"
+  on public.accounts for select
+  using (auth.uid() = user_id);
 
-create policy "ledger_entries: owner access"
-  on public.ledger_entries for all
-  using  (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+create policy "transactions: owner read"
+  on public.transactions for select
+  using (auth.uid() = user_id);
+
+create policy "ledger_entries: owner read"
+  on public.ledger_entries for select
+  using (auth.uid() = user_id);
+
+create policy "health_scores: owner read"
+  on public.health_scores for select
+  using (auth.uid() = user_id);
+
+-- User-preference tables: no ledger invariants, browser may read and write own rows.
 
 create policy "planned_expenses: owner access"
   on public.planned_expenses for all
@@ -212,11 +234,6 @@ create policy "planned_expenses: owner access"
 
 create policy "savings_goals: owner access"
   on public.savings_goals for all
-  using  (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-
-create policy "health_scores: owner access"
-  on public.health_scores for all
   using  (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
@@ -237,3 +254,6 @@ from public.transactions t
 where t.withdrawal is not null
   and t.state = 'CLEARED'
 group by t.user_id, date_trunc('month', t.date), t.category;
+
+-- View is created after the bulk grants above, so grant it separately
+grant select on public.monthly_spending to authenticated, service_role;
