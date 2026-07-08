@@ -1,0 +1,119 @@
+- generic [ref=e1]:
+  - generic [ref=e458]:
+    - complementary [ref=e459]:
+      - generic [ref=e460]:
+        - generic [ref=e461]:
+          - img [ref=e462]
+          - generic [ref=e471]: FinFlow
+        - button "Collapse sidebar" [ref=e472] [cursor=pointer]:
+          - generic [ref=e473]: chevron_left
+      - generic [ref=e474]: Workspace
+      - navigation [ref=e475]:
+        - generic [ref=e476] [cursor=pointer]:
+          - generic [ref=e477]: dashboard
+          - generic [ref=e478]: Dashboard
+        - generic [ref=e479] [cursor=pointer]:
+          - generic [ref=e480]: receipt_long
+          - generic [ref=e481]: Transactions
+        - generic [ref=e482] [cursor=pointer]:
+          - generic [ref=e483]: calendar_month
+          - generic [ref=e484]: Budget Planner
+          - generic [ref=e485]: soon
+        - generic [ref=e486] [cursor=pointer]:
+          - generic [ref=e487]: savings
+          - generic [ref=e488]: Savings Goals
+          - generic [ref=e489]: soon
+        - generic [ref=e490] [cursor=pointer]:
+          - generic [ref=e491]: monitoring
+          - generic [ref=e492]: Health Score
+          - generic [ref=e493]: soon
+        - generic [ref=e494] [cursor=pointer]:
+          - generic [ref=e495]: description
+          - generic [ref=e496]: Statements
+      - generic [ref=e497]: Accounts
+      - generic [ref=e498]:
+        - generic [ref=e499]:
+          - generic [ref=e501]: DBS Multiplier
+          - generic [ref=e502]: $8,420
+        - generic [ref=e503]:
+          - generic [ref=e505]: OCBC 360
+          - generic [ref=e506]: $3,115
+      - button "light_mode Light mode" [ref=e508] [cursor=pointer]:
+        - generic [ref=e509]: light_mode
+        - generic [ref=e510]: Light mode
+      - generic [ref=e513]:
+        - generic [ref=e514]: ZS
+        - generic [ref=e515]:
+          - generic [ref=e516]: zsyzachary11
+          - generic [ref=e517]: zsyzachary11@gmail.com
+        - button "Sign out" [ref=e518] [cursor=pointer]:
+          - generic [ref=e519]: logout
+    - generic [ref=e520]:
+      - banner [ref=e521]:
+        - generic [ref=e523]: Transactions
+        - generic [ref=e524]:
+          - generic [ref=e525]:
+            - generic: search
+            - textbox "Search transactions" [ref=e526] [cursor=pointer]
+          - button "calendar_today July" [ref=e527] [cursor=pointer]:
+            - generic [ref=e528]: calendar_today
+            - text: July
+          - link "upload_file Upload statement" [ref=e529] [cursor=pointer]:
+            - /url: /upload
+            - generic [ref=e530]: upload_file
+            - text: Upload statement
+      - main [ref=e531]:
+        - button "+ Add transaction" [ref=e533] [cursor=pointer]
+        - table [ref=e535]:
+          - rowgroup [ref=e536]:
+            - row "Date Description Category Withdrawal Credit" [ref=e537]:
+              - columnheader "Date" [ref=e538]
+              - columnheader "Description" [ref=e539]
+              - columnheader "Category" [ref=e540]
+              - columnheader "Withdrawal" [ref=e541]
+              - columnheader "Credit" [ref=e542]
+          - rowgroup [ref=e543]:
+            - row "2026-07-07 Ya Kun Food & Dining 6.70 —" [ref=e544]:
+              - cell "2026-07-07" [ref=e545]
+              - cell "Ya Kun" [ref=e546]
+              - cell "Food & Dining" [ref=e547]:
+                - generic [ref=e548]: Food & Dining
+              - cell "6.70" [ref=e549]
+              - cell "—" [ref=e550]
+  - generic [ref=e553]:
+    - heading "Add transaction" [level=2] [ref=e554]
+    - generic [ref=e555]:
+      - generic [ref=e556]:
+        - generic [ref=e557]: Description
+        - textbox "Description" [active] [ref=e558]:
+          - /placeholder: e.g. Ya Kun Kaya Toast
+      - generic [ref=e559]:
+        - generic [ref=e560]:
+          - generic [ref=e561]: Amount (SGD)
+          - spinbutton "Amount (SGD)" [ref=e562]
+        - generic [ref=e563]:
+          - generic [ref=e564]: Type
+          - combobox "Type" [ref=e565]:
+            - option "Withdrawal" [selected]
+            - option "Income (Credit)"
+      - generic [ref=e566]:
+        - generic [ref=e567]:
+          - generic [ref=e568]: Category
+          - combobox "Category" [ref=e569]:
+            - option "Food & Dining" [selected]
+            - option "Transport"
+            - option "Shopping"
+            - option "Bills & Utilities"
+            - option "Healthcare"
+            - option "Entertainment"
+            - option "Travel"
+            - option "Education"
+            - option "Income"
+            - option "Transfer"
+            - option "Other"
+        - generic [ref=e570]:
+          - generic [ref=e571]: Date
+          - textbox "Date" [ref=e572]: 2026-07-08
+      - generic [ref=e573]:
+        - button "Cancel" [ref=e574] [cursor=pointer]
+        - button "Save" [ref=e575] [cursor=pointer]

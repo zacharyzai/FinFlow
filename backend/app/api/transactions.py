@@ -6,7 +6,7 @@ from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
 from app.core.database import supabase
 from pydantic import BaseModel
 
-from app.api.statements import _get_or_create_account
+from app.api.statements import _get_or_create_account, _insert_ledger_entries
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -95,7 +95,12 @@ async def create_transaction(
         "state":       "PENDING",           # always starts as PENDING                                                                                                                                   
     }                                       
                                                                                                                                                                                                         
-    # Step 4: insert into Supabase — same as mongoose's .save()                                                                                                                                        
-    result = supabase.table("transactions").insert(record).execute()                                                                                                                                     
+    # Step 4: insert into Supabase — same as mongoose's .save()
+    result = supabase.table("transactions").insert(record).execute()
+    tx = result.data[0]
 
-    return result.data[0]
+    # Step 5: write the two ledger entries (double-entry bookkeeping)
+    # Every transaction must produce a DR + CR of equal amount — never just one.
+    _insert_ledger_entries(current_user["id"], [tx])
+
+    return tx

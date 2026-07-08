@@ -243,7 +243,7 @@ create policy "reconciliation_log: no user access"
 
 -- Dashboard view: monthly spending by category
 
-create view public.monthly_spending as
+create view public.monthly_spending with (security_invoker = true) as
 select
   t.user_id,
   date_trunc('month', t.date)::date as month,

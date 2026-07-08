@@ -1,0 +1,245 @@
+- generic [ref=e107]:
+  - complementary [ref=e108]:
+    - generic [ref=e109]:
+      - generic [ref=e110]:
+        - img [ref=e111]
+        - generic [ref=e120]: FinFlow
+      - button "Collapse sidebar" [ref=e121] [cursor=pointer]:
+        - generic [ref=e122]: chevron_left
+    - generic [ref=e123]: Workspace
+    - navigation [ref=e124]:
+      - generic [ref=e125] [cursor=pointer]:
+        - generic [ref=e126]: dashboard
+        - generic [ref=e127]: Dashboard
+      - generic [ref=e128] [cursor=pointer]:
+        - generic [ref=e129]: receipt_long
+        - generic [ref=e130]: Transactions
+      - generic [ref=e131] [cursor=pointer]:
+        - generic [ref=e132]: calendar_month
+        - generic [ref=e133]: Budget Planner
+        - generic [ref=e134]: soon
+      - generic [ref=e135] [cursor=pointer]:
+        - generic [ref=e136]: savings
+        - generic [ref=e137]: Savings Goals
+        - generic [ref=e138]: soon
+      - generic [ref=e139] [cursor=pointer]:
+        - generic [ref=e140]: monitoring
+        - generic [ref=e141]: Health Score
+        - generic [ref=e142]: soon
+      - generic [ref=e143] [cursor=pointer]:
+        - generic [ref=e144]: description
+        - generic [ref=e145]: Statements
+    - generic [ref=e146]: Accounts
+    - generic [ref=e147]:
+      - generic [ref=e148]:
+        - generic [ref=e150]: DBS Multiplier
+        - generic [ref=e151]: $8,420
+      - generic [ref=e152]:
+        - generic [ref=e154]: OCBC 360
+        - generic [ref=e155]: $3,115
+    - button "light_mode Light mode" [ref=e157] [cursor=pointer]:
+      - generic [ref=e158]: light_mode
+      - generic [ref=e159]: Light mode
+    - generic [ref=e162]:
+      - generic [ref=e163]: ZS
+      - generic [ref=e164]:
+        - generic [ref=e165]: zsyzachary11
+        - generic [ref=e166]: zsyzachary11@gmail.com
+      - button "Sign out" [ref=e167] [cursor=pointer]:
+        - generic [ref=e168]: logout
+  - generic [ref=e169]:
+    - banner [ref=e170]:
+      - generic [ref=e172]: Dashboard
+      - generic [ref=e173]:
+        - generic [ref=e174]:
+          - generic: search
+          - textbox "Search transactions" [ref=e175] [cursor=pointer]
+        - button "calendar_today July" [ref=e176] [cursor=pointer]:
+          - generic [ref=e177]: calendar_today
+          - text: July
+        - link "upload_file Upload statement" [ref=e178] [cursor=pointer]:
+          - /url: /upload
+          - generic [ref=e179]: upload_file
+          - text: Upload statement
+    - generic [ref=e180]:
+      - generic [ref=e181]:
+        - generic [ref=e182]:
+          - generic [ref=e183]: Monthly income
+          - generic [ref=e184]: $0
+        - generic [ref=e185]:
+          - generic [ref=e186]: Spent this cycle
+          - generic [ref=e187]: $0
+          - generic [ref=e188]: 0% of income · 8 days
+        - generic [ref=e189]:
+          - generic [ref=e190]: Safe daily budget
+          - generic [ref=e191]: $0
+          - generic [ref=e192]: 0 days remaining
+        - generic [ref=e193]:
+          - generic [ref=e194]: Health score
+          - generic [ref=e195]: 78/100
+          - generic [ref=e196]:
+            - generic [ref=e197]: arrow_upward
+            - text: 4 pts vs May
+      - generic [ref=e198]:
+        - generic [ref=e199]:
+          - generic [ref=e200]:
+            - generic [ref=e201]:
+              - generic [ref=e202]: cloud_upload
+              - generic [ref=e203]: Smart Upload & Parsing
+            - generic [ref=e205]: Parsing
+          - link "file_upload Drop a statement, or browse files PDF or CSV · up to 10 MB DBS OCBC UOB" [ref=e207] [cursor=pointer]:
+            - /url: /upload
+            - generic [ref=e208]: file_upload
+            - generic [ref=e209]: Drop a statement, or browse files
+            - generic [ref=e210]: PDF or CSV · up to 10 MB
+            - generic [ref=e211]:
+              - generic [ref=e212]: DBS
+              - generic [ref=e213]: OCBC
+              - generic [ref=e214]: UOB
+          - generic [ref=e215]:
+            - generic [ref=e216]:
+              - generic [ref=e218]: picture_as_pdf
+              - generic [ref=e219]:
+                - generic [ref=e220]: DBS_eStatement_May2026.pdf
+                - generic [ref=e221]: 1.2 MB · 142 transactions
+              - generic [ref=e222]: 68%
+            - generic [ref=e225]:
+              - generic [ref=e226]:
+                - generic [ref=e228]: check
+                - generic [ref=e229]: Uploaded
+              - generic [ref=e230]:
+                - generic [ref=e232]: check
+                - generic [ref=e233]: Extract tables
+              - generic [ref=e237]: Claude parsing
+              - generic [ref=e238]:
+                - generic [ref=e240]: "4"
+                - generic [ref=e241]: Ledger write
+            - generic [ref=e242]:
+              - generic [ref=e243]: Categorising row 97 of 142…
+              - generic [ref=e244]: pdfplumber + anthropic
+          - generic [ref=e245]:
+            - generic [ref=e246]: lock
+            - text: Raw statement is deleted immediately after parsing.
+        - generic [ref=e247]:
+          - generic [ref=e248]:
+            - generic [ref=e249]:
+              - generic [ref=e250]: monitoring
+              - generic [ref=e251]: Financial Health Score
+            - generic [ref=e252]: Updated 1 Jun
+          - generic [ref=e253]:
+            - generic [ref=e254]:
+              - img [ref=e255]
+              - generic [ref=e258]:
+                - generic [ref=e259]: "78"
+                - generic [ref=e260]: / 100
+                - generic [ref=e261]: Good
+            - generic [ref=e262]:
+              - generic [ref=e264]:
+                - generic [ref=e265]: Savings rate
+                - generic [ref=e266]: "82"
+              - generic [ref=e270]:
+                - generic [ref=e271]:
+                  - text: Expense volatility
+                  - generic [ref=e272]: Weakest
+                - generic [ref=e273]: "58"
+              - generic [ref=e277]:
+                - generic [ref=e278]: Bill regularity
+                - generic [ref=e279]: "91"
+              - generic [ref=e283]:
+                - generic [ref=e284]: Budget adherence
+                - generic [ref=e285]: "73"
+          - generic [ref=e288]:
+            - generic [ref=e289]: auto_awesome
+            - generic [ref=e290]:
+              - generic [ref=e291]: AI insight · weakest dimension
+              - generic [ref=e292]:
+                - text: Your discretionary spend swings ±$210 week to week. Capping dining & shopping at
+                - strong [ref=e293]: $200/week
+                - text: would steady cash flow and lift your score by an estimated 6 points.
+        - generic [ref=e294]:
+          - generic [ref=e295]:
+            - generic [ref=e296]:
+              - generic [ref=e297]: bar_chart
+              - generic [ref=e298]: Month-over-Month Analytics
+            - generic [ref=e300]:
+              - generic [ref=e301] [cursor=pointer]: 6M
+              - generic [ref=e302] [cursor=pointer]: 1Y
+              - generic [ref=e303] [cursor=pointer]: All
+          - generic [ref=e304]:
+            - generic [ref=e305]:
+              - generic [ref=e308]: avg $0
+              - generic [ref=e310]: "* June in progress"
+              - generic [ref=e312]:
+                - generic [ref=e313]: Jul 2026 spending by category
+                - generic [ref=e314]: $0
+            - generic [ref=e316]:
+              - generic [ref=e317]:
+                - generic [ref=e318]: warning
+                - generic [ref=e319]: Unusual transactions
+              - generic [ref=e320]: Flagged by the 2σ deviation rule
+              - generic [ref=e321]: 0 transactions flagged this cycle.
+        - generic [ref=e322]:
+          - generic [ref=e323]:
+            - generic [ref=e324]:
+              - generic [ref=e325]: event
+              - generic [ref=e326]: Prescriptive Budget Calendar
+            - generic [ref=e327]: June 2026
+          - generic [ref=e328]:
+            - generic [ref=e329]:
+              - generic [ref=e330]:
+                - generic [ref=e331]: SUN
+                - generic [ref=e332]: MON
+                - generic [ref=e333]: TUE
+                - generic [ref=e334]: WED
+                - generic [ref=e335]: THU
+                - generic [ref=e336]: FRI
+                - generic [ref=e337]: SAT
+              - generic [ref=e338]:
+                - generic [ref=e341]: "1"
+                - generic [ref=e344]: "2"
+                - generic [ref=e347]: "3"
+                - generic [ref=e350]: "4"
+                - generic [ref=e353]: "5"
+                - generic [ref=e356]: "6"
+                - generic [ref=e359]: "7"
+                - generic [ref=e362]: "8"
+                - generic [ref=e365]: "9"
+                - generic [ref=e368]: "10"
+                - generic [ref=e371]: "11"
+                - generic [ref=e374]: "12"
+                - generic [ref=e377]: "13"
+                - generic [ref=e380]: "14"
+                - generic [ref=e383]: "15"
+                - generic [ref=e386]: "16"
+                - generic [ref=e389]: "17"
+                - generic [ref=e392]: "18"
+                - generic [ref=e395]: "19"
+                - generic [ref=e397]: "20"
+                - generic [ref=e399]: "21"
+                - generic [ref=e401]: "22"
+                - generic [ref=e403]: "23"
+                - generic [ref=e405]: "24"
+                - generic [ref=e407]: "25"
+                - generic [ref=e409]: "26"
+                - generic [ref=e411]: "27"
+                - generic [ref=e413]: "28"
+                - generic [ref=e415]: "29"
+                - generic [ref=e417]: "30"
+              - generic [ref=e418]:
+                - generic [ref=e421]: Under budget
+                - generic [ref=e424]: Near limit
+                - generic [ref=e427]: Over budget
+                - generic [ref=e430]: Planned expense
+            - generic [ref=e431]:
+              - generic [ref=e432]: Remaining spendable pool
+              - generic [ref=e433]: Cycle resets 1 Aug
+              - generic [ref=e434]:
+                - text: Spendable pool
+                - generic [ref=e435]: $0
+              - generic [ref=e436]:
+                - generic [ref=e437]: $0 ÷ 0 days remaining
+                - generic [ref=e438]: $0 / day
+                - generic [ref=e439]:
+                  - generic [ref=e440]: check_circle
+                  - text: On track
+              - generic [ref=e441]: Safe daily spend to hit your $800 savings goal and cover all planned costs.
