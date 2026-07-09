@@ -403,6 +403,9 @@ const anomalies = computed(() =>
 // ── Budget calendar ───────────────────────────────────────────
 const calCells = computed(() => {
   // ponytail: statusMap is static (no per-day budget endpoint); planned events are live
+  const now = new Date()
+  const firstDayOfWeek = new Date(now.getFullYear(), now.getMonth(), 1).getDay() // 0=Sun … 6=Sat
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   const statusMap = { 1:'g',2:'g',3:'w',4:'o',5:'g',6:'g',7:'w',8:'g',9:'g',10:'w',11:'o',12:'g',13:'g',14:'o',15:'g',16:'g',17:'w',18:'o' }
   const colorMap = { g: 'var(--good)', w: 'var(--warn)', o: 'var(--bad)' }
   const today = now.getDate()
@@ -412,10 +415,6 @@ const calCells = computed(() => {
     const day = +e.due_date.split('-')[2]
     plannedMap[day] = [e.name, fmt(e.amount)]
   }
-
-  const now = new Date()
-  const firstDayOfWeek = new Date(now.getFullYear(), now.getMonth(), 1).getDay() // 0=Sun … 6=Sat
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
 
   const cells = Array.from({ length: firstDayOfWeek }, (_, i) => (
     { key: `blank${i}`, blank: true, cellBg: 'transparent', cellBorder: '1px solid transparent' }
