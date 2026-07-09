@@ -153,11 +153,11 @@
       <!-- Google button -->
       <button
         type="button"
-        disabled
+        @click="signInWithGoogle"
         class="w-full flex items-center justify-center gap-3 py-3 rounded-full
                border border-[var(--border)]
                bg-[var(--surface)] text-[var(--text-2)] text-sm
-               opacity-60 cursor-not-allowed"
+               hover:bg-[var(--surface-2)] cursor-pointer transition-colors duration-200"
         style="animation: fade-up 240ms var(--ease-out) 225ms both"
       >
         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -168,12 +168,6 @@
         </svg>
         Continue with Google
       </button>
-      <p
-        class="text-center text-xs text-[var(--text-3)] italic mt-2"
-        style="animation: fade-up 240ms var(--ease-out) 240ms both"
-      >
-        More options coming soon
-      </p>
 
       <!-- Sign-up toggle — text crossfades on mode switch -->
       <Transition name="swap" mode="out-in">
@@ -214,6 +208,10 @@ const signUpSuccess = ref(false)
 const showPassword = ref(false)
 const emailFocused = ref(false)
 const passwordFocused = ref(false)
+
+async function signInWithGoogle() {
+  await auth.signInWithGoogle()
+}
 
 async function handleSubmit() {
   errorMsg.value = ''

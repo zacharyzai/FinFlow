@@ -82,13 +82,13 @@ def _parse_csv(content: bytes) -> list[dict]:
 def _categorise_with_claude(rows: list[dict]) -> list[dict]:
     """
     Send all transaction rows to Claude in a single API call.
-    Returns the same rows with a 'category' key added to each.
+    Uses tool/function calling so Claude returns guaranteed valid JSON —
+    no markdown fences to strip, no enum values to re-validate.
     """
     rows_json = json.dumps(rows, default=str)
     prompt = f"""You are a financial transaction categoriser for a Singapore personal finance app.
 
-Categorise each transaction below into exactly one of these categories:
-{", ".join(VALID_CATEGORIES)}
+Categorise each transaction below into exactly one of the allowed categories.
 
 Rules:
 - Hawker centres, restaurants, cafes, GrabFood, Deliveroo → "Food & Dining"
@@ -106,31 +106,46 @@ Rules:
 Input (JSON array):
 {rows_json}
 
-Respond with ONLY a JSON array of objects, one per input row, each with:
-  "index": (same position as input, 0-based)
-  "category": (one of the categories above)
+Call the submit_categories tool with every row categorised."""
 
-No explanation, no markdown, just the JSON array."""
+    # The schema acts as a strict contract — Claude cannot return values
+    # outside the enum or omit required fields.
+    tool = {
+        "name": "submit_categories",
+        "description": "Submit the category for each input transaction.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "index":    { "type": "integer" },
+                            "category": { "type": "string", "enum": list(VALID_CATEGORIES) },
+                        },
+                        "required": ["index", "category"],
+                    },
+                }
+            },
+            "required": ["results"],
+        },
+    }
 
     message = claude.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1024,
+        tools=[tool],
+        tool_choice={"type": "tool", "name": "submit_categories"},  # force the tool, no free-text
         messages=[{"role": "user", "content": prompt}],
     )
 
-    raw = message.content[0].text.strip()
-    # Strip markdown code fences if Claude adds them
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-
-    categorised = json.loads(raw)
-    category_map = {item["index"]: item["category"] for item in categorised}
+    # Claude returns a tool_use block — extract the structured input directly
+    tool_use = next(b for b in message.content if b.type == "tool_use")
+    category_map = {item["index"]: item["category"] for item in tool_use.input["results"]}
 
     for i, row in enumerate(rows):
-        cat = category_map.get(i, "Other")
-        row["category"] = cat if cat in VALID_CATEGORIES else "Other"
+        row["category"] = category_map.get(i, "Other")
 
     return rows
 
