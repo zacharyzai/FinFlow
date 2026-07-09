@@ -229,7 +229,7 @@
                 <span class="material-symbols-outlined" style="font-size:20px;color:var(--text)">event</span>
                 <span class="ff-widget-title">Prescriptive Budget Calendar</span>
               </div>
-              <div style="font:400 12px 'IBM Plex Sans';color:var(--text-3)">June 2026</div>
+              <div style="font:400 12px 'IBM Plex Sans';color:var(--text-3)">{{ currentMonthName }}</div>
             </div>
 
             <div style="display:flex;gap:28px;flex-wrap:wrap">
@@ -405,7 +405,7 @@ const calCells = computed(() => {
   // ponytail: statusMap is static (no per-day budget endpoint); planned events are live
   const statusMap = { 1:'g',2:'g',3:'w',4:'o',5:'g',6:'g',7:'w',8:'g',9:'g',10:'w',11:'o',12:'g',13:'g',14:'o',15:'g',16:'g',17:'w',18:'o' }
   const colorMap = { g: 'var(--good)', w: 'var(--warn)', o: 'var(--bad)' }
-  const today = new Date().getDate()
+  const today = now.getDate()
 
   const plannedMap = {}
   for (const e of (store.upcoming ?? [])) {
@@ -413,8 +413,14 @@ const calCells = computed(() => {
     plannedMap[day] = [e.name, fmt(e.amount)]
   }
 
-  const cells = [{ key: 'blank', blank: true, cellBg: 'transparent', cellBorder: '1px solid transparent' }]
-  for (let n = 1; n <= 30; n++) {
+  const now = new Date()
+  const firstDayOfWeek = new Date(now.getFullYear(), now.getMonth(), 1).getDay() // 0=Sun … 6=Sat
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+
+  const cells = Array.from({ length: firstDayOfWeek }, (_, i) => (
+    { key: `blank${i}`, blank: true, cellBg: 'transparent', cellBorder: '1px solid transparent' }
+  ))
+  for (let n = 1; n <= daysInMonth; n++) {
     const isToday = n === today
     const s = statusMap[n]
     const p = plannedMap[n]
