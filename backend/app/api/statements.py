@@ -76,7 +76,7 @@ def _parse_csv(content: bytes) -> list[dict]:
 
 
 # ----------------------------------------------------------------
-# Claude categorisation
+# Claude categorisation (CSV rows that already have amounts)
 # ----------------------------------------------------------------
 
 def _categorise_with_claude(rows: list[dict]) -> list[dict]:
@@ -119,7 +119,6 @@ No explanation, no markdown, just the JSON array."""
     )
 
     raw = message.content[0].text.strip()
-    # Strip markdown code fences if Claude adds them
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
@@ -133,6 +132,98 @@ No explanation, no markdown, just the JSON array."""
         row["category"] = cat if cat in VALID_CATEGORIES else "Other"
 
     return rows
+
+
+# ----------------------------------------------------------------
+# Claude full extraction for PDFs (date + amounts + category in one call)
+# ----------------------------------------------------------------
+
+def _extract_transactions_from_pdf_text(raw_text: str) -> list[dict]:
+    """
+    Ask Claude to extract fully-structured transactions from PDF bank statement text.
+    This is used instead of _categorise_with_claude for PDFs because pdfplumber
+    gives us raw text/tables that don't have cleanly separated amount columns yet.
+    Claude reads the full statement text and returns structured rows directly.
+    """
+    prompt = f"""You are parsing a Singapore bank statement (DBS, OCBC, or UOB).
+
+Extract every transaction from the text below and return a JSON array.
+Each object must have exactly these fields:
+  "date": "YYYY-MM-DD" (convert any date format to ISO)
+  "description": "merchant or transaction description"
+  "withdrawal": number or null (money going OUT, positive number)
+  "credit": number or null (money coming IN, positive number)
+  "category": one of {json.dumps(VALID_CATEGORIES)}
+
+Categorisation rules:
+- Hawker centres, restaurants, cafes, GrabFood, Deliveroo → "Food & Dining"
+- MRT, bus, Grab, Gojek, petrol, ERP → "Transport"
+- Retail, Lazada, Shopee → "Shopping"
+- SP Group, StarHub, Singtel, rent, insurance → "Bills & Utilities"
+- Hospitals, clinics, pharmacies → "Healthcare"
+- Movies, streaming, concerts → "Entertainment"
+- Flights, hotels, Airbnb → "Travel"
+- Schools, tuition → "Education"
+- Salary, dividends, interest, refunds → "Income"
+- Bank transfers, PayNow, PayLah → "Transfer"
+- Anything else → "Other"
+
+Important:
+- Only include rows that are actual transactions (skip headers, balances, account info).
+- withdrawal and credit are mutually exclusive — a transaction is one or the other, never both.
+- Amounts are always positive numbers.
+
+Bank statement text:
+---
+{raw_text[:12000]}
+---
+
+Respond with ONLY the JSON array. No explanation, no markdown fences."""
+
+    message = claude.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=4096,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    raw = message.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+
+    rows = json.loads(raw)
+
+    # Validate each row defensively — Claude can hallucinate
+    clean = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        description = str(row.get("description", "")).strip()
+        if not description:
+            continue
+        withdrawal = row.get("withdrawal")
+        credit = row.get("credit")
+        try:
+            withdrawal = float(withdrawal) if withdrawal not in (None, "", "null") else None
+        except (TypeError, ValueError):
+            withdrawal = None
+        try:
+            credit = float(credit) if credit not in (None, "", "null") else None
+        except (TypeError, ValueError):
+            credit = None
+        category = row.get("category", "Other")
+        if category not in VALID_CATEGORIES:
+            category = "Other"
+        clean.append({
+            "date": str(row.get("date", ""))[:10],
+            "description": description[:500],
+            "withdrawal": withdrawal,
+            "credit": credit,
+            "category": category,
+        })
+
+    return clean
 
 
 # ----------------------------------------------------------------
@@ -238,7 +329,10 @@ async def upload_statement(
     current_user: dict = Depends(get_current_user),
 ):
     # --- Validate ---
-    if file.content_type not in ALLOWED_MIME_TYPES:
+    filename_lower = (file.filename or "").lower()
+    is_csv_by_name = filename_lower.endswith(".csv")
+    is_pdf_by_name = filename_lower.endswith(".pdf")
+    if file.content_type not in ALLOWED_MIME_TYPES and not is_csv_by_name and not is_pdf_by_name:
         raise HTTPException(status_code=400, detail="Only PDF and CSV files are accepted.")
 
     content = await file.read()
@@ -247,28 +341,38 @@ async def upload_statement(
 
     user_id = current_user["id"]
 
-    # --- Parse ---
+    # --- Parse + categorise ---
+    is_pdf = file.content_type == "application/pdf"
     try:
-        if file.content_type == "application/pdf":
+        if is_pdf:
             raw_text = _extract_pdf_text(content)
-            # Convert extracted PDF text into row dicts for Claude
-            rows = [{"description": line.strip()} for line in raw_text.splitlines() if line.strip()]
+            content = b""  # discard immediately after extraction
+            if not raw_text.strip():
+                raise HTTPException(status_code=422, detail="Could not extract any text from the PDF.")
+            # Claude does full extraction (date + amounts + category) in one shot for PDFs
+            try:
+                rows = _extract_transactions_from_pdf_text(raw_text)
+            except Exception as e:
+                raise HTTPException(status_code=502, detail=f"AI extraction failed: {e}")
         else:
             rows = _parse_csv(content)
+            content = b""
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Could not parse file: {e}")
     finally:
-        # Raw file never stored beyond this point
-        content = b""
+        content = b""  # ensure raw bytes are cleared
 
     if not rows:
         raise HTTPException(status_code=422, detail="No transactions found in the uploaded file.")
 
-    # --- Categorise with Claude ---
-    try:
-        rows = _categorise_with_claude(rows)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"AI categorisation failed: {e}")
+    # --- Categorise with Claude (CSV only — PDFs already have categories from extraction) ---
+    if not is_pdf:
+        try:
+            rows = _categorise_with_claude(rows)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"AI categorisation failed: {e}")
 
     # --- Write to database ---
     account_id = _get_or_create_account(user_id, bank)

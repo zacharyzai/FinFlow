@@ -49,12 +49,20 @@ Thumbs.db
 *.log
 logs/
 
-# Node / frontend (for future use)
+# Node / frontend
 node_modules/
 .next/
 .nuxt/
 dist/
 .cache/
+*.local
+
+# Vite
+.vite/
+vite.config.*.timestamp-*
+
+# Vue
+*.vue.js
 
 # Testing
 .pytest_cache/

@@ -1,9 +1,9 @@
 <template>
   <div class="landing" :class="{ loading: isLoading }">
-    <!-- Transparent navbar -->
-    <nav class="navbar">
+    <!-- Sticky navbar — hides when page CTA buttons appear -->
+    <nav class="navbar" ref="navbar">
       <span class="navbar__brand">FinFlow</span>
-      <router-link class="navbar__cta" to="/login">Sign Up / Log In</router-link>
+      <router-link class="navbar__cta" to="/login">Sign In</router-link>
     </nav>
 
     <main>
@@ -53,6 +53,7 @@ const isLoading = ref(true)
 
 const galleryImages = Array.from({ length: 11 }, (_, i) => ({ src: `/images/${i + 1}.svg`, alt: `Image ${i + 1}` }))
 
+const navbar = ref(null)
 const blockMain = ref(null)
 const blockWrapper = ref(null)
 const content = ref(null)
@@ -134,25 +135,41 @@ function toggleContent(isVisible) {
   const title = contentTitle.value
   const desc = contentDescription.value
   const btns = contentButtons.value
+  const nav = navbar.value
   if (!title || !desc || !btns) return
 
-  gsap
-    .timeline({ defaults: { overwrite: true } })
-    .to(title, {
-      yPercent: isVisible ? 0 : titleOffsetY,
-      duration: 0.7,
-      ease: 'power2.inOut',
-    })
-    .to(
-      [desc, btns],
+  const tl = gsap.timeline({ defaults: { overwrite: true } })
+
+  tl.to(title, {
+    yPercent: isVisible ? 0 : titleOffsetY,
+    duration: 0.7,
+    ease: 'power2.inOut',
+  })
+  .to(
+    [desc, btns],
+    {
+      opacity: isVisible ? 1 : 0,
+      duration: 0.4,
+      ease: `power1.${isVisible ? 'inOut' : 'out'}`,
+      pointerEvents: isVisible ? 'all' : 'none',
+    },
+    isVisible ? '-=90%' : '<',
+  )
+
+  // Hide navbar when page CTA buttons are visible — they duplicate Sign In
+  if (nav) {
+    tl.to(
+      nav,
       {
-        opacity: isVisible ? 1 : 0,
-        duration: 0.4,
-        ease: `power1.${isVisible ? 'inOut' : 'out'}`,
-        pointerEvents: isVisible ? 'all' : 'none',
+        opacity: isVisible ? 0 : 1,
+        y: isVisible ? -16 : 0,
+        duration: 0.35,
+        ease: 'power2.inOut',
+        pointerEvents: isVisible ? 'none' : 'auto',
       },
-      isVisible ? '-=90%' : '<',
+      '<',
     )
+  }
 }
 
 function addParallaxOnScroll() {
@@ -269,7 +286,8 @@ onUnmounted(() => {
 }
 
 /* ---------- Navbar ---------- */
-.navbar {
+/* .landing .navbar beats the .landing * wildcard reset (specificity 0-2-0 vs 0-1-1) */
+.landing .navbar {
   position: fixed;
   top: 0;
   left: 0;
@@ -278,32 +296,41 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 40px 40px;
-  background: transparent;
-  pointer-events: none;
+  padding: 0 2체0px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s;
 }
 
+.navbar__brand {
+  font-family: 'Urbanist', var(--font-secondary);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+
 .navbar__cta {
-  pointer-events: all;
+  flex-shrink: 0;
   font-family: 'Urbanist', var(--font-primary);
   font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-decoration: none;
   color: var(--color-text);
+  background: transparent;
+  border: none;
+  padding: 0;
   transition: opacity 0.2s;
 }
 
 .navbar__cta:hover {
-  opacity: 0.5;
-}
-
-.navbar__brand {
-  font-family: 'Urbanist', var(--font-secondary);
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--color-text);
+  opacity: 0.55;
 }
 
 /* Loading overlay */
