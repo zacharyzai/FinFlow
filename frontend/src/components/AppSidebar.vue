@@ -219,8 +219,24 @@ const accounts = [
   color: var(--text-3);
   text-transform: uppercase;
   padding: 8px 10px 6px;
+  overflow: hidden;
+  transition: opacity 150ms ease-out, padding 280ms var(--ease-drawer), max-height 280ms var(--ease-drawer);
+  max-height: 40px;
+  white-space: nowrap;
 }
 .ff-accounts-label { padding-top: 18px; }
+
+/* Collapse section labels when sidebar is closed */
+.ff-sidebar.is-collapsed .ff-section-label {
+  max-height: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+/* Hide accounts list entirely when collapsed — dots alone aren't useful */
+.ff-sidebar.is-collapsed .ff-accounts {
+  display: none;
+}
 
 /* ─── Nav ───────────────────────────────────────────── */
 .ff-nav {
@@ -331,10 +347,21 @@ const accounts = [
 .ff-sidebar.is-collapsed .ff-theme-row {
   justify-content: center;
 }
+.ff-sidebar.is-collapsed .ff-theme-label {
+  flex: 0;
+  width: 0;
+}
+.ff-sidebar.is-collapsed .ff-toggle-track {
+  width: 0;
+  overflow: hidden;
+}
 .ff-theme-label {
   flex: 1;
   font: 500 13px 'IBM Plex Sans';
   color: var(--text-2);
+  transition: flex 280ms var(--ease-drawer), width 280ms var(--ease-drawer), opacity 150ms ease-out;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .ff-toggle-track {
   width: 40px;
@@ -344,6 +371,7 @@ const accounts = [
   border: 1px solid var(--border);
   position: relative;
   flex-shrink: 0;
+  transition: width 280ms var(--ease-drawer), opacity 150ms ease-out;
 }
 .ff-toggle-knob {
   position: absolute;
@@ -369,6 +397,12 @@ const accounts = [
 .ff-sidebar.is-collapsed .ff-user-row {
   justify-content: center;
   gap: 0;
+}
+.ff-sidebar.is-collapsed .ff-icon-btn {
+  width: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
 }
 .ff-avatar {
   width: 34px;
@@ -412,7 +446,7 @@ const accounts = [
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 150ms ease-out, color 150ms ease-out, transform 160ms ease-out;
+  transition: background 150ms ease-out, color 150ms ease-out, transform 160ms ease-out, width 280ms var(--ease-drawer), padding 280ms var(--ease-drawer), border 280ms var(--ease-drawer);
 }
 .ff-icon-btn:hover { background: var(--surface-3); color: var(--text); }
 .ff-icon-btn:active { transform: scale(0.93); }
@@ -427,6 +461,7 @@ const accounts = [
   .ff-account-item,
   .ff-toggle-knob,
   .ff-icon-btn,
+  .ff-section-label,
   .ff-nav a {
     transition-duration: 0ms !important;
     animation-duration: 0ms !important;
