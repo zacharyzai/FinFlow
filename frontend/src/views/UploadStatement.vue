@@ -9,7 +9,7 @@
     >
       <p class="text-slate-900 dark:text-white font-semibold mb-1">Parsing your statement…</p>
       <p class="text-slate-500 dark:text-slate-400 text-sm mb-8">
-        {{ file?.name?.endsWith('.pdf') ? 'PDFs take 20–40 seconds — Claude is reading the full statement.' : 'Usually 10–20 seconds while Claude categorises each transaction.' }}
+        Usually 10–20 seconds while Claude reads each transaction.
       </p>
 
       <div class="space-y-1">

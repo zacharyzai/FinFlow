@@ -4,6 +4,15 @@
     <div class="flex-1 flex flex-col min-w-0">
       <AppHeader title="Transactions" />
       <main class="flex-1 p-6">
+        <div class="flex justify-end mb-4">
+          <button @click="showAdd = true"
+                  class="px-4 py-2 rounded-full bg-[var(--brand)] hover:bg-[var(--brand-strong)]
+                         text-[var(--on-brand)] text-sm font-semibold cursor-pointer
+                         transition-colors duration-150">
+            + Add transaction
+          </button>
+        </div>
+
         <!-- Skeleton — matches real table shape so there's no layout jump -->
         <div v-if="store.loading" class="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/5 animate-pulse">
           <table class="w-full text-sm">
@@ -28,18 +37,22 @@
 
         <p v-else-if="store.error" class="text-red-400 text-sm">{{ store.error }}</p>
         <TransactionTable v-else :transactions="store.transactions" />
+
+        <AddTransactionModal :open="showAdd" @close="showAdd = false" />
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import TransactionTable from '@/components/TransactionTable.vue'
+import AddTransactionModal from '@/components/AddTransactionModal.vue'
 import { useTransactionsStore } from '@/stores/transactions'
 
 const store = useTransactionsStore()
+const showAdd = ref(false)
 onMounted(() => store.fetch())
 </script>

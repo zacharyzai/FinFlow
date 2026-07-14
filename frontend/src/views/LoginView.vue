@@ -5,10 +5,10 @@
       <!-- Heading — crossfades when sign-in ↔ sign-up mode switches -->
       <Transition name="swap" mode="out-in">
         <div :key="isSignUp" class="mb-7 text-center">
-          <h1 class="text-2xl font-bold text-zinc-900 dark:text-white mb-1">
+          <h1 class="text-2xl font-bold text-[var(--text)] mb-1">
             {{ isSignUp ? 'Create account' : 'Sign In' }}
           </h1>
-          <p class="text-sm text-zinc-400 dark:text-zinc-500">
+          <p class="text-sm text-[var(--text-3)]">
             {{ isSignUp ? 'Start your financial clarity journey.' : 'Your money, finally making sense.' }}
           </p>
         </div>
@@ -23,7 +23,7 @@
         >
           <svg
             class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-150"
-            :class="emailFocused ? 'text-[#7C9E8C]' : 'text-zinc-400'"
+            :class="emailFocused ? 'text-[var(--brand)]' : 'text-[var(--text-3)]'"
             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
             stroke="currentColor" stroke-width="2"
           >
@@ -38,10 +38,10 @@
             @focus="emailFocused = true"
             @blur="emailFocused = false"
             class="w-full pl-10 pr-4 py-3 rounded-xl
-                   bg-zinc-100 dark:bg-zinc-800
+                   bg-[var(--surface-2)]
                    border border-transparent
-                   text-zinc-900 dark:text-white placeholder:text-zinc-400 text-sm
-                   focus:outline-none focus:border-[#7C9E8C] focus:ring-2 focus:ring-[#7C9E8C]/25
+                   text-[var(--text)] placeholder:text-[var(--text-3)] text-sm
+                   focus:outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/25
                    transition-all duration-200"
           />
         </div>
@@ -53,7 +53,7 @@
         >
           <svg
             class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-150"
-            :class="passwordFocused ? 'text-[#7C9E8C]' : 'text-zinc-400'"
+            :class="passwordFocused ? 'text-[var(--brand)]' : 'text-[var(--text-3)]'"
             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
             stroke="currentColor" stroke-width="2"
           >
@@ -68,10 +68,10 @@
             @focus="passwordFocused = true"
             @blur="passwordFocused = false"
             class="w-full pl-10 pr-11 py-3 rounded-xl
-                   bg-zinc-100 dark:bg-zinc-800
+                   bg-[var(--surface-2)]
                    border border-transparent
-                   text-zinc-900 dark:text-white placeholder:text-zinc-400 text-sm
-                   focus:outline-none focus:border-[#7C9E8C] focus:ring-2 focus:ring-[#7C9E8C]/25
+                   text-[var(--text)] placeholder:text-[var(--text-3)] text-sm
+                   focus:outline-none focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/25
                    transition-all duration-200"
           />
           <!-- Show/hide toggle — icons crossfade on switch -->
@@ -79,7 +79,7 @@
             type="button"
             @click="showPassword = !showPassword"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
-            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer transition-colors duration-150"
+            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-3)] hover:text-[var(--text)] cursor-pointer transition-colors duration-150"
           >
             <Transition name="icon-swap" mode="out-in">
               <svg v-if="!showPassword" key="eye-on" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -98,7 +98,7 @@
           <div v-if="!isSignUp" class="text-right">
             <RouterLink
               to="/forgot-password"
-              class="text-xs text-zinc-400 hover:text-[#7C9E8C] transition-colors duration-150 cursor-pointer"
+              class="text-xs text-[var(--text-3)] hover:text-[var(--brand)] transition-colors duration-150 cursor-pointer"
             >
               Forgot password?
             </RouterLink>
@@ -108,13 +108,13 @@
         <!-- Error / success messages — slide in from above -->
         <Transition name="slide-down">
           <p v-if="errorMsg" key="err" role="alert"
-             class="text-red-500 text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-4 py-2.5">
+             class="text-[var(--bad)] text-xs bg-[var(--bad-bg)] border border-[var(--bad-bd)] rounded-xl px-4 py-2.5">
             {{ errorMsg }}
           </p>
         </Transition>
         <Transition name="slide-down">
           <p v-if="signUpSuccess" key="ok" role="status"
-             class="text-[#7C9E8C] text-xs bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 rounded-xl px-4 py-2.5">
+             class="text-[var(--good)] text-xs bg-[var(--good-bg)] border border-[var(--good-bd)] rounded-xl px-4 py-2.5">
             Check your email to confirm your account.
           </p>
         </Transition>
@@ -123,10 +123,10 @@
         <button
           type="submit"
           :disabled="loading"
-          class="w-full py-3 rounded-full bg-[#7C9E8C] hover:bg-[#6a8f7c]
-                 text-white text-sm font-bold tracking-wide
+          class="w-full py-3 rounded-full bg-[var(--brand)] hover:bg-[var(--brand-strong)]
+                 text-[var(--on-brand)] text-sm font-bold tracking-wide
                  disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer
-                 transition-colors duration-200 shadow-md shadow-[#7C9E8C]/30 mt-1"
+                 transition-colors duration-200 shadow-md shadow-[var(--brand)]/30 mt-1"
           style="animation: fade-up 240ms var(--ease-out) 160ms both"
         >
           <Transition name="icon-swap" mode="out-in">
@@ -145,19 +145,19 @@
         class="flex items-center gap-3 my-5"
         style="animation: fade-up 240ms var(--ease-out) 200ms both"
       >
-        <div class="flex-1 h-px bg-zinc-200 dark:bg-zinc-700"></div>
-        <span class="text-zinc-400 text-xs">Or sign in with</span>
-        <div class="flex-1 h-px bg-zinc-200 dark:bg-zinc-700"></div>
+        <div class="flex-1 h-px bg-[var(--border)]"></div>
+        <span class="text-[var(--text-3)] text-xs">Or sign in with</span>
+        <div class="flex-1 h-px bg-[var(--border)]"></div>
       </div>
 
       <!-- Google button -->
       <button
         type="button"
-        disabled
+        @click="signInWithGoogle"
         class="w-full flex items-center justify-center gap-3 py-3 rounded-full
-               border border-zinc-200 dark:border-zinc-700
-               bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-sm
-               opacity-60 cursor-not-allowed"
+               border border-[var(--border)]
+               bg-[var(--surface)] text-[var(--text-2)] text-sm
+               hover:bg-[var(--surface-2)] cursor-pointer transition-colors duration-200"
         style="animation: fade-up 240ms var(--ease-out) 225ms both"
       >
         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -168,23 +168,17 @@
         </svg>
         Continue with Google
       </button>
-      <p
-        class="text-center text-xs text-zinc-400 italic mt-2"
-        style="animation: fade-up 240ms var(--ease-out) 240ms both"
-      >
-        More options coming soon
-      </p>
 
       <!-- Sign-up toggle — text crossfades on mode switch -->
       <Transition name="swap" mode="out-in">
         <!-- ponytail: no inline animation — swap <Transition> owns enter/exit on every mount.
              Inline animation: would re-run the 260ms stagger delay on every mode click, silencing swap. -->
-        <p :key="isSignUp" class="text-center text-sm text-zinc-400 dark:text-zinc-500 mt-6">
+        <p :key="isSignUp" class="text-center text-sm text-[var(--text-3)] mt-6">
           {{ isSignUp ? 'Already have an account?' : "Don't have an account?" }}
           <button
             type="button"
             @click="isSignUp = !isSignUp; errorMsg = ''; signUpSuccess = false"
-            class="text-[#7C9E8C] font-semibold ml-1 hover:underline cursor-pointer"
+            class="text-[var(--brand)] font-semibold ml-1 hover:underline cursor-pointer"
           >
             {{ isSignUp ? 'Sign in' : 'Sign Up' }}
           </button>
@@ -214,6 +208,10 @@ const signUpSuccess = ref(false)
 const showPassword = ref(false)
 const emailFocused = ref(false)
 const passwordFocused = ref(false)
+
+async function signInWithGoogle() {
+  await auth.signInWithGoogle()
+}
 
 async function handleSubmit() {
   errorMsg.value = ''

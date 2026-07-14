@@ -53,10 +53,20 @@ async function signUp(email, password) {
     if (error) throw error
   }
 
+  async function signInWithGoogle() {
+    // Supabase handles the entire OAuth dance — redirects to Google, gets the token,
+    // redirects back to /dashboard. We just trigger it.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    })
+    if (error) throw error
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
     user.value = null
   }
 
-  return { user, loading, init, signIn, signUp, signOut, resetPassword, verifyOtp, updatePassword }
+  return { user, loading, init, signIn, signUp, signOut, signInWithGoogle, resetPassword, verifyOtp, updatePassword }
 })
