@@ -1,11 +1,52 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, Field
 
 from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
+from app.api.statements import _get_or_create_account, _insert_ledger_entries
 from app.core.database import supabase
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+
+class TransactionIn(BaseModel):
+    date: str
+    description: str
+    amount: float = Field(gt=0)
+    type: Literal["withdrawal", "credit"]
+    category: str = "Other"
+
+
+@router.post('')
+@limiter.limit("30/minute")
+async def create_transaction(
+    request: Request,
+    body: TransactionIn,
+    current_user: dict = Depends(get_current_user),
+):
+    if body.category not in VALID_CATEGORIES:
+        body.category = "Other"
+
+    user_id = current_user["id"]
+    account_id = _get_or_create_account(user_id, "Manual")
+
+    record = {
+        "account_id": account_id,
+        "user_id": user_id,
+        "date": body.date,
+        "description": body.description[:500],
+        "withdrawal": body.amount if body.type == "withdrawal" else None,
+        "credit": body.amount if body.type == "credit" else None,
+        "category": body.category,
+        "state": "PENDING",
+    }
+
+    result = supabase.table("transactions").insert(record).execute()
+    tx = result.data[0]
+    _insert_ledger_entries(user_id, [tx])
+
+    return {"transaction": tx}
 
 #Transactions List
 @router.get('')

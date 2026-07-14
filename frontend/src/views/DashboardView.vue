@@ -24,10 +24,10 @@
           </div>
           <div class="ff-stat-cell">
             <div class="ff-stat-label">Health score</div>
-            <div class="ff-stat-value">{{ score }}<span style="font-size:14px;color:var(--text-3)">/100</span></div>
-            <div class="ff-badge ff-badge--good">
-              <span class="material-symbols-outlined" style="font-size:15px">arrow_upward</span>4 pts vs May
+            <div class="ff-stat-value">
+              {{ store.healthScore ? store.healthScore.score : '…' }}<span style="font-size:14px;color:var(--text-3)">/100</span>
             </div>
+            <div class="ff-stat-meta" v-if="store.healthScore">{{ scoreLabel }}</div>
           </div>
         </div>
 
@@ -40,11 +40,6 @@
               <div style="display:flex;align-items:center;gap:9px">
                 <span class="material-symbols-outlined" style="font-size:20px;color:var(--text)">cloud_upload</span>
                 <span class="ff-widget-title">Smart Upload &amp; Parsing</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px">
-                <div class="ff-live-badge">
-                  <span class="ff-live-dot"></span>Parsing
-                </div>
               </div>
             </div>
 
@@ -60,38 +55,6 @@
               </div>
             </router-link>
 
-            <!-- Parsing progress -->
-            <div class="ff-parse-card">
-              <div style="display:flex;align-items:center;gap:11px">
-                <div style="width:34px;height:34px;border-radius:7px;background:var(--bad-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                  <span class="material-symbols-outlined" style="font-size:19px;color:var(--bad)">picture_as_pdf</span>
-                </div>
-                <div style="flex:1;min-width:0">
-                  <div style="font:600 13px 'IBM Plex Sans';color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">DBS_eStatement_May2026.pdf</div>
-                  <div style="font:400 11px 'IBM Plex Mono';color:var(--text-3)">1.2 MB · 142 transactions</div>
-                </div>
-                <div style="font:600 13px 'IBM Plex Mono';color:var(--good)">{{ parsingPct }}%</div>
-              </div>
-              <div class="ff-progress-track" style="margin-top:11px">
-                <div class="ff-progress-bar" :style="`width:${parsingPct}%`"></div>
-              </div>
-              <!-- Steps -->
-              <div style="display:flex;justify-content:space-between;margin-top:14px">
-                <div class="ff-step" v-for="step in parseSteps" :key="step.label">
-                  <div class="ff-step-dot" :class="step.state">
-                    <span v-if="step.state === 'done'" class="material-symbols-outlined" style="font-size:15px;color:var(--surface)">check</span>
-                    <span v-else-if="step.state === 'active'" class="ff-step-inner-dot"></span>
-                    <span v-else style="font:600 11px 'IBM Plex Mono';color:var(--text-3)">{{ step.num }}</span>
-                  </div>
-                  <div class="ff-step-label" :class="step.state === 'active' ? 'ff-step-label--active' : ''">{{ step.label }}</div>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding-top:11px;border-top:1px solid var(--border)">
-                <div style="font:500 11px 'IBM Plex Sans';color:var(--text-2)">Categorising row 97 of 142…</div>
-                <div style="font:500 10px 'IBM Plex Mono';color:var(--text-3)">pdfplumber + anthropic</div>
-              </div>
-            </div>
-
             <div style="display:flex;align-items:center;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid var(--border);font:400 11px 'IBM Plex Sans';color:var(--text-3)">
               <span class="material-symbols-outlined" style="font-size:15px">lock</span>
               Raw statement is deleted immediately after parsing.
@@ -105,10 +68,15 @@
                 <span class="material-symbols-outlined" style="font-size:20px;color:var(--text)">monitoring</span>
                 <span class="ff-widget-title">Financial Health Score</span>
               </div>
-              <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3)">Updated 1 Jun</div>
+              <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3)">{{ store.healthScore?.month ?? '' }}</div>
             </div>
 
-            <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+            <!-- Loading state -->
+            <div v-if="!store.healthScore" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:32px 0">
+              <div style="font:400 12px 'IBM Plex Sans';color:var(--text-3)">Analysing with AI…</div>
+            </div>
+
+            <div v-else style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
               <!-- Gauge -->
               <div style="position:relative;width:164px;height:164px;flex-shrink:0;margin:0 auto">
                 <svg width="164" height="164" style="transform:rotate(-90deg)">
@@ -116,7 +84,7 @@
                   <circle cx="82" cy="82" r="70" fill="none" :style="`stroke:${scoreColor}`" stroke-width="13" stroke-linecap="round" stroke-dasharray="439.8" :stroke-dashoffset="scoreOffset"/>
                 </svg>
                 <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-                  <div style="font:600 42px 'IBM Plex Mono';letter-spacing:-1.5px;line-height:1;color:var(--text)">{{ score }}</div>
+                  <div style="font:600 42px 'IBM Plex Mono';letter-spacing:-1.5px;line-height:1;color:var(--text)">{{ store.healthScore.score }}</div>
                   <div style="font:500 11px 'IBM Plex Mono';color:var(--text-3);margin-top:2px">/ 100</div>
                   <div class="ff-score-label" :style="`color:${scoreColor}`">{{ scoreLabel }}</div>
                 </div>
@@ -130,21 +98,21 @@
                       {{ dim.label }}
                       <span v-if="dim.weakest" class="ff-weakest-badge">Weakest</span>
                     </span>
-                    <span style="font:600 12.5px 'IBM Plex Mono';color:var(--text)">{{ dim.val }}</span>
+                    <span style="font:600 12.5px 'IBM Plex Mono';color:var(--text)">{{ dim.score }}/{{ dim.max }}</span>
                   </div>
                   <div class="ff-progress-track">
-                    <div class="ff-progress-bar" :style="`width:${dim.val}%;background:${dim.color}`"></div>
+                    <div class="ff-progress-bar" :style="`width:${dim.pct}%;background:${dim.color}`"></div>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- AI insight -->
-            <div class="ff-insight-box" style="margin-top:18px">
+            <div v-if="store.healthScore?.ai_tip" class="ff-insight-box" style="margin-top:18px">
               <span class="material-symbols-outlined" style="font-size:19px;color:var(--brand);flex-shrink:0">auto_awesome</span>
               <div>
                 <div style="font:600 10px 'IBM Plex Sans';letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:3px">AI insight · weakest dimension</div>
-                <div style="font:400 12.5px/1.5 'IBM Plex Sans';color:var(--text-2)">Your discretionary spend swings ±$210 week to week. Capping dining &amp; shopping at <strong style="color:var(--text)">$200/week</strong> would steady cash flow and lift your score by an estimated 6 points.</div>
+                <div style="font:400 12.5px/1.5 'IBM Plex Sans';color:var(--text-2)">{{ store.healthScore.ai_tip }}</div>
               </div>
             </div>
           </section>
@@ -155,13 +123,6 @@
               <div style="display:flex;align-items:center;gap:9px">
                 <span class="material-symbols-outlined" style="font-size:20px;color:var(--text)">bar_chart</span>
                 <span class="ff-widget-title">Month-over-Month Analytics</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px">
-                <div class="ff-range-tabs">
-                  <span class="ff-range-tab ff-range-tab--active">6M</span>
-                  <span class="ff-range-tab">1Y</span>
-                  <span class="ff-range-tab">All</span>
-                </div>
               </div>
             </div>
 
@@ -179,7 +140,7 @@
                     </div>
                   </div>
                 </div>
-                <div style="font:400 10px 'IBM Plex Sans';color:var(--text-3);text-align:right;margin-top:2px">* June in progress</div>
+                <div style="font:400 10px 'IBM Plex Sans';color:var(--text-3);text-align:right;margin-top:2px">* month in progress</div>
 
                 <!-- Category breakdown -->
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
@@ -207,6 +168,9 @@
                   <div style="font:600 13px 'IBM Plex Sans';color:var(--text)">Unusual transactions</div>
                 </div>
                 <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:3px;margin-bottom:6px">Flagged by the 2σ deviation rule</div>
+                <div v-if="anomalies.length === 0" style="font:400 12px 'IBM Plex Sans';color:var(--text-3);padding:12px 0">
+                  No anomalies detected this cycle.
+                </div>
                 <div v-for="tx in anomalies" :key="tx.name" style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)">
                   <div>
                     <div style="font:600 12.5px 'IBM Plex Sans';color:var(--text)">{{ tx.name }}</div>
@@ -214,10 +178,10 @@
                   </div>
                   <div style="text-align:right">
                     <div style="font:600 12.5px 'IBM Plex Mono';color:var(--text)">{{ tx.amount }}</div>
-                    <div class="ff-sigma-badge" :class="tx.level === 'bad' ? 'ff-sigma--bad' : 'ff-sigma--warn'">{{ tx.sigma }}</div>
+                    <div class="ff-sigma-badge ff-sigma--warn">+{{ tx.aboveAvg }} avg</div>
                   </div>
                 </div>
-                <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:12px">{{ anomalies.length }} transactions flagged this cycle.</div>
+                <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:12px">{{ anomalies.length }} transaction{{ anomalies.length !== 1 ? 's' : '' }} flagged this cycle.</div>
               </div>
             </div>
           </section>
@@ -249,14 +213,13 @@
                     <div v-if="cell.hasPlanned" class="ff-cal-event">
                       {{ cell.planned }} <span style="font-family:'IBM Plex Mono';color:var(--text)">{{ cell.plannedAmt }}</span>
                     </div>
-                    <div v-if="cell.hasStatus" class="ff-cal-status" :style="`background:${cell.statusColor}`"></div>
                   </div>
                 </div>
                 <!-- Legend -->
                 <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px">
-                  <div v-for="lg in calLegend" :key="lg.label" style="display:flex;align-items:center;gap:6px">
-                    <span :style="lg.style"></span>
-                    <span style="font:500 11px 'IBM Plex Sans';color:var(--text-2)">{{ lg.label }}</span>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--surface-2);border:1px solid var(--border-strong)"></span>
+                    <span style="font:500 11px 'IBM Plex Sans';color:var(--text-2)">Planned expense</span>
                   </div>
                 </div>
               </div>
@@ -280,11 +243,7 @@
                     <span style="font:600 34px 'IBM Plex Mono';letter-spacing:-1px;color:var(--good)">{{ fmt(dailyBudget) }}</span>
                     <span style="font:500 13px 'IBM Plex Sans';color:var(--text-3)"> / day</span>
                   </div>
-                  <div class="ff-on-track">
-                    <span class="material-symbols-outlined" style="font-size:15px">check_circle</span>On track
-                  </div>
                 </div>
-                <div style="font:400 11px/1.5 'IBM Plex Sans';color:var(--text-3);margin-top:12px">Safe daily spend to hit your $800 savings goal and cover all planned costs.</div>
               </div>
             </div>
           </section>
@@ -318,30 +277,34 @@ const daysElapsed = computed(() => new Date().getDate())
 const spentPct = computed(() => income.value ? Math.round(spentThisCycle.value / income.value * 100) : 0)
 const available = computed(() => store.budget?.breakdown.available ?? 0)
 
-// ── Health score (no API endpoint yet) ───────────────────────
-// ponytail: static; wire to health_scores endpoint in Phase 2
-const score = 78
+// ── Health score (live from store, loads after main data) ─────
 const C = 439.823
-const scoreOffset = computed(() => (C * (1 - score / 100)).toFixed(1))
-const scoreColor = computed(() => score >= 65 ? 'var(--good)' : score >= 50 ? 'var(--warn)' : 'var(--bad)')
-const scoreLabel = computed(() => score >= 80 ? 'Strong' : score >= 65 ? 'Good' : score >= 50 ? 'Fair' : 'At risk')
-
-const dimensions = [
-  { label: 'Savings rate',       val: 82, color: 'var(--good)' },
-  { label: 'Expense volatility', val: 58, color: 'var(--warn)', weakest: true },
-  { label: 'Bill regularity',    val: 91, color: 'var(--good)' },
-  { label: 'Budget adherence',   val: 73, color: 'var(--good)' },
-]
-
-// ── Parsing widget (demo UI) ──────────────────────────────────
-// ponytail: static demo; wire to upload store progress when upload flow is connected
-const parsingPct = 68
-const parseSteps = [
-  { label: 'Uploaded',       state: 'done',    num: '1' },
-  { label: 'Extract tables', state: 'done',    num: '2' },
-  { label: 'Claude parsing', state: 'active',  num: '3' },
-  { label: 'Ledger write',   state: 'pending', num: '4' },
-]
+const scoreOffset = computed(() => {
+  const s = store.healthScore?.score
+  return s != null ? (C * (1 - s / 100)).toFixed(1) : C
+})
+const scoreColor = computed(() => {
+  const s = store.healthScore?.score
+  if (s == null) return 'var(--text-3)'
+  return s >= 65 ? 'var(--good)' : s >= 50 ? 'var(--warn)' : 'var(--bad)'
+})
+const scoreLabel = computed(() => {
+  const s = store.healthScore?.score
+  if (s == null) return ''
+  return s >= 80 ? 'Strong' : s >= 65 ? 'Good' : s >= 50 ? 'Fair' : 'At risk'
+})
+const dimensions = computed(() => {
+  if (!store.healthScore) return []
+  const { dimensions: dims, weakest_dimension } = store.healthScore
+  return Object.entries(dims).map(([key, d]) => ({
+    label: d.label,
+    score: d.score,
+    max: d.max,
+    pct: Math.round(d.score / d.max * 100),
+    color: key === weakest_dimension ? 'var(--warn)' : 'var(--good)',
+    weakest: key === weakest_dimension,
+  }))
+})
 
 // ── Analytics: bar chart ──────────────────────────────────────
 const chartBars = computed(() => {
@@ -363,7 +326,7 @@ const avgSpend = computed(() => {
 })
 
 const avgPct = computed(() => {
-  if (!store.monthlyTrend.length) return 79
+  if (!store.monthlyTrend.length) return 0
   const maxVal = Math.max(...store.monthlyTrend.map(p => p.total), 1)
   return Math.round(avgSpend.value / maxVal * 100)
 })
@@ -386,6 +349,7 @@ const currentMonthName = computed(() => {
 })
 
 // ── Analytics: anomalies ──────────────────────────────────────
+// Backend returns amount_above (withdrawal - category mean), not sigma value
 const anomalies = computed(() =>
   (store.anomalies ?? []).slice(0, 5).map(a => {
     const [, mo, day] = a.date.split('-')
@@ -394,20 +358,16 @@ const anomalies = computed(() =>
       cat: a.category,
       date: `${+day} ${MONTHS[+mo - 1]}`,
       amount: `$${(+a.withdrawal).toFixed(2)}`,
-      sigma: `${a.sigma}σ`,
-      level: a.sigma >= 2.5 ? 'bad' : 'warn',
+      aboveAvg: `$${(+a.amount_above).toFixed(2)}`,
     }
   })
 )
 
 // ── Budget calendar ───────────────────────────────────────────
 const calCells = computed(() => {
-  // ponytail: statusMap is static (no per-day budget endpoint); planned events are live
   const now = new Date()
-  const firstDayOfWeek = new Date(now.getFullYear(), now.getMonth(), 1).getDay() // 0=Sun … 6=Sat
+  const firstDayOfWeek = new Date(now.getFullYear(), now.getMonth(), 1).getDay()
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  const statusMap = { 1:'g',2:'g',3:'w',4:'o',5:'g',6:'g',7:'w',8:'g',9:'g',10:'w',11:'o',12:'g',13:'g',14:'o',15:'g',16:'g',17:'w',18:'o' }
-  const colorMap = { g: 'var(--good)', w: 'var(--warn)', o: 'var(--bad)' }
   const today = now.getDate()
 
   const plannedMap = {}
@@ -421,26 +381,17 @@ const calCells = computed(() => {
   ))
   for (let n = 1; n <= daysInMonth; n++) {
     const isToday = n === today
-    const s = statusMap[n]
     const p = plannedMap[n]
     cells.push({
       key: 'd' + n, blank: false, n,
       cellBg: isToday ? 'var(--brand)' : 'var(--surface)',
       cellBorder: isToday ? '1px solid var(--brand)' : '1px solid var(--border)',
       numColor: isToday ? 'var(--on-brand)' : 'var(--text-2)',
-      hasStatus: !!s, statusColor: s ? colorMap[s] : 'transparent',
       hasPlanned: !!p, planned: p?.[0] ?? '', plannedAmt: p?.[1] ?? '',
     })
   }
   return cells
 })
-
-const calLegend = [
-  { label: 'Under budget', style: 'display:inline-block;width:14px;height:4px;border-radius:2px;background:var(--good)' },
-  { label: 'Near limit',   style: 'display:inline-block;width:14px;height:4px;border-radius:2px;background:var(--warn)' },
-  { label: 'Over budget',  style: 'display:inline-block;width:14px;height:4px;border-radius:2px;background:var(--bad)' },
-  { label: 'Planned expense', style: 'display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--surface-2);border:1px solid var(--border-strong)' },
-]
 
 // ── Spendable pool ────────────────────────────────────────────
 const poolRows = computed(() => {
@@ -504,14 +455,6 @@ const nextMonthName = computed(() => {
   font: 500 11.5px 'IBM Plex Sans';
   color: var(--text-3);
 }
-.ff-badge {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-top: 5px;
-  font: 500 11.5px 'IBM Plex Sans';
-}
-.ff-badge--good { color: var(--good); }
 
 /* ── Widget grid ── */
 .ff-widget-grid {
@@ -539,24 +482,6 @@ const nextMonthName = computed(() => {
 }
 
 /* Upload widget */
-.ff-live-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font: 600 11px 'IBM Plex Sans';
-  color: var(--good);
-  background: var(--good-bg);
-  border: 1px solid var(--good-bd);
-  border-radius: 999px;
-  padding: 3px 9px;
-}
-.ff-live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--good);
-  animation: finflowPulse 1.4s ease-in-out infinite;
-}
 .ff-drop-zone {
   border: 1.5px dashed var(--border-strong);
   border-radius: 8px;
@@ -575,12 +500,6 @@ const nextMonthName = computed(() => {
   padding: 4px 11px;
   background: var(--surface);
 }
-.ff-parse-card {
-  margin-top: 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-}
 .ff-progress-track {
   height: 6px;
   border-radius: 3px;
@@ -590,42 +509,7 @@ const nextMonthName = computed(() => {
 .ff-progress-bar {
   height: 100%;
   border-radius: 3px;
-  background: linear-gradient(90deg, var(--brand), var(--sage), var(--brand));
-  background-size: 200px 100%;
-  animation: finflowShimmer 1.1s linear infinite;
-}
-.ff-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  flex: 1;
-}
-.ff-step-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.ff-step-dot.done   { background: var(--good); }
-.ff-step-dot.active { border: 2px solid var(--good); animation: finflowPulse 1.3s ease-in-out infinite; }
-.ff-step-dot.pending { background: var(--surface-2); }
-.ff-step-inner-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--good);
-}
-.ff-step-label {
-  font: 500 9.5px 'IBM Plex Sans';
-  color: var(--text-3);
-  text-align: center;
-}
-.ff-step-label--active {
-  font-weight: 600;
-  color: var(--text);
+  transition: width 600ms ease;
 }
 
 /* Health score */
@@ -657,25 +541,6 @@ const nextMonthName = computed(() => {
 }
 
 /* Analytics */
-.ff-range-tabs {
-  display: flex;
-  gap: 2px;
-  background: var(--surface-2);
-  border-radius: 7px;
-  padding: 3px;
-}
-.ff-range-tab {
-  font: 500 11.5px 'IBM Plex Sans';
-  color: var(--text-3);
-  padding: 5px 12px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-.ff-range-tab--active {
-  font-weight: 600;
-  color: var(--text);
-  background: var(--surface);
-}
 .ff-avg-line {
   position: absolute;
   left: 0; right: 0;
@@ -733,7 +598,6 @@ const nextMonthName = computed(() => {
   margin-top: 3px;
   display: inline-block;
 }
-.ff-sigma--bad  { color: var(--bad);  background: var(--bad-bg);  border: 1px solid var(--bad-bd); }
 .ff-sigma--warn { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-bd); }
 
 /* Calendar */
@@ -772,21 +636,5 @@ const nextMonthName = computed(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.ff-cal-status {
-  height: 4px;
-  border-radius: 2px;
-}
-.ff-on-track {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 8px;
-  font: 600 11px 'IBM Plex Sans';
-  color: var(--good);
-  background: var(--good-bg);
-  border: 1px solid var(--good-bd);
-  border-radius: 999px;
-  padding: 3px 10px;
 }
 </style>

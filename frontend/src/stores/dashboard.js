@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { analyticsApi, budgetApi } from '@/services/api'
+import { analyticsApi, budgetApi, healthScoreApi } from '@/services/api'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(false)
@@ -12,6 +12,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const monthlyTrend = ref([])                      // /analytics/spending-over-time
   const anomalies = ref([])                         // /analytics/anomalies
   const upcoming = ref([])                          // /budget/upcoming
+  const healthScore = ref(null)                     // /health-score (slow: calls Claude)
 
   async function load() {
     loading.value = true
@@ -43,7 +44,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
     } finally {
       loading.value = false
     }
+
+    // Health score runs separately — it calls Claude and can take 2-3s
+    // ponytail: fire-and-forget so it doesn't block the main dashboard load
+    healthScoreApi.get()
+      .then(res => { healthScore.value = res.data })
+      .catch(() => {})
   }
 
-  return { loading, error, budget, categories, monthlyTrend, anomalies, upcoming, load }
+  return { loading, error, budget, categories, monthlyTrend, anomalies, upcoming, healthScore, load }
 })
