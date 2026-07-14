@@ -117,9 +117,9 @@ async function handleSignOut() {
 const NAV = [
   { to: '/dashboard',    label: 'Dashboard',      icon: 'dashboard' },
   { to: '/transactions', label: 'Transactions',    icon: 'receipt_long' },
-  { to: '/budget',       label: 'Budget Planner',  icon: 'calendar_month', soon: true },
-  { to: '/goals',        label: 'Savings Goals',   icon: 'savings',        soon: true },
-  { to: '/health',       label: 'Health Score',    icon: 'monitoring',     soon: true },
+  { to: '/budget',       label: 'Budget Planner',  icon: 'calendar_month' },
+  { to: '/goals',        label: 'Savings Goals',   icon: 'savings' },
+  { to: '/health',       label: 'Health Score',    icon: 'monitoring' },
   { to: '/upload',       label: 'Statements',      icon: 'description' },
 ]
 

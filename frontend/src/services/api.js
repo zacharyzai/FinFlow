@@ -35,6 +35,19 @@ export const analyticsApi = {
 export const budgetApi = {
   daily: () => api.get('/budget/daily'),
   upcoming: () => api.get('/budget/upcoming'),
+  addExpense: (data) => api.post('/budget/expenses', data),
+  deleteExpense: (id) => api.delete(`/budget/expenses/${id}`),
+}
+
+export const savingsApi = {
+  list: () => api.get('/savings'),
+  create: (data) => api.post('/savings', data),
+  updateSaved: (id, saved) => api.patch(`/savings/${id}`, { saved }),
+  delete: (id) => api.delete(`/savings/${id}`),
+}
+
+export const healthScoreApi = {
+  get: () => api.get('/health-score'),
 }
 
 export default api
