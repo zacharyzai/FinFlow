@@ -18,6 +18,14 @@ class TransactionIn(BaseModel):
     category: str = "Other"
 
 
+class TransactionUpdate(BaseModel):
+    date: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[float] = Field(default=None, gt=0)
+    type: Optional[Literal["withdrawal", "credit"]] = None
+    category: Optional[str] = None
+
+
 @router.post('')
 @limiter.limit("30/minute")
 async def create_transaction(
@@ -47,6 +55,57 @@ async def create_transaction(
     _insert_ledger_entries(user_id, [tx])
 
     return {"transaction": tx}
+
+@router.patch('/{transaction_id}')
+@limiter.limit("30/minute")
+async def update_transaction(
+    request: Request,
+    transaction_id: str,
+    body: TransactionUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    existing = (
+        supabase.table("transactions").select("*")
+        .eq("id", transaction_id).eq("user_id", user_id).limit(1).execute().data
+    )
+    if not existing:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    tx = existing[0]
+
+    patch = {}
+    if body.date is not None:
+        patch["date"] = body.date
+    if body.description is not None:
+        patch["description"] = body.description[:500]
+    if body.category is not None:
+        patch["category"] = body.category if body.category in VALID_CATEGORIES else "Other"
+
+    # Amount/type move together — withdrawal and credit are mutually exclusive
+    new_type = body.type or ("withdrawal" if tx["withdrawal"] is not None else "credit")
+    if body.amount is not None or body.type is not None:
+        amount = body.amount if body.amount is not None else (tx["withdrawal"] or tx["credit"])
+        patch["withdrawal"] = amount if new_type == "withdrawal" else None
+        patch["credit"] = amount if new_type == "credit" else None
+
+    if not patch:
+        return {"transaction": tx}
+
+    result = (
+        supabase.table("transactions").update(patch)
+        .eq("id", transaction_id).eq("user_id", user_id).execute()
+    )
+    updated_tx = result.data[0]
+
+    # Re-sync the double-entry ledger to match the edited amount/category.
+    # ponytail: overwrites the old DR/CR pair rather than posting a reversing
+    # entry — simplest option for a personal-use app; a production ledger would
+    # keep the original entries and post a correction for auditability.
+    supabase.table("ledger_entries").delete().eq("transaction_id", transaction_id).eq("user_id", user_id).execute()
+    _insert_ledger_entries(user_id, [updated_tx])
+
+    return {"transaction": updated_tx}
+
 
 #Transactions List
 @router.get('')

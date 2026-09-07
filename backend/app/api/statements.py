@@ -3,17 +3,15 @@ import json
 import tempfile
 import os
 
-import anthropic
 import pandas as pd
 import pdfplumber
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
 from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
-from app.core.config import ANTHROPIC_API_KEY
+from app.core.ai_client import ai_generate
 from app.core.database import supabase
 
 router = APIRouter(prefix="/statements", tags=["statements"])
-claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 ALLOWED_MIME_TYPES = {"application/pdf", "text/csv", "application/vnd.ms-excel"}
 MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -79,18 +77,7 @@ def _parse_csv(content: bytes) -> list[dict]:
 # Claude categorisation (CSV rows that already have amounts)
 # ----------------------------------------------------------------
 
-def _categorise_with_claude(rows: list[dict]) -> list[dict]:
-    """
-    Send all transaction rows to Claude in a single API call.
-    Returns the same rows with a 'category' key added to each.
-    """
-    rows_json = json.dumps(rows, default=str)
-    prompt = f"""You are a financial transaction categoriser for a Singapore personal finance app.
-
-Categorise each transaction below into exactly one of these categories:
-{", ".join(VALID_CATEGORIES)}
-
-Rules:
+_CATEGORY_RULES = """Rules:
 - Hawker centres, restaurants, cafes, GrabFood, Deliveroo → "Food & Dining"
 - MRT, bus, Grab, Gojek, petrol, ERP → "Transport"
 - Retail, online shopping, Lazada, Shopee → "Shopping"
@@ -101,31 +88,94 @@ Rules:
 - Schools, tuition, courses → "Education"
 - Salary, interest, dividends, refunds → "Income"
 - Bank transfers, PayNow, PayLah → "Transfer"
-- Anything else → "Other"
+- Anything else → "Other" — only use this once you genuinely can't tell, not as a first guess"""
 
-Input (JSON array):
-{rows_json}
 
-Respond with ONLY a JSON array of objects, one per input row, each with:
-  "index": (same position as input, 0-based)
-  "category": (one of the categories above)
+# Rows per categorisation call, and a token-per-row estimate for sizing max_tokens.
+# A single big call risks the model's output getting cut off mid-JSON on large
+# statements (25+ rows already flirts with this); batching keeps each call's
+# output small and bounded regardless of how many transactions were uploaded.
+_CATEGORISE_BATCH_SIZE = 40
+_TOKENS_PER_ROW = 40
 
-No explanation, no markdown, just the JSON array."""
 
-    message = claude.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1024,
-        messages=[{"role": "user", "content": prompt}],
+def _run_categorisation(items: list[dict], search: bool) -> dict:
+    """
+    Ask the model to categorise a batch of {"index", "description", ...} rows.
+    Returns {index: category}. Each item carries its own true row index so a
+    retry can send a subset without index/position getting out of sync.
+    """
+    items_json = json.dumps(items, default=str)
+    search_note = (
+        "\nYou have web search — use it for unfamiliar merchant names (SGP company "
+        "codes, chain names you don't recognise) instead of guessing \"Other\"."
+        if search else ""
     )
+    prompt = f"""You are a financial transaction categoriser for a Singapore personal finance app.
 
-    raw = message.content[0].text.strip()
+Categorise each transaction below into exactly one of these categories:
+{", ".join(VALID_CATEGORIES)}
+
+{_CATEGORY_RULES}{search_note}
+
+Input (JSON array), each row already has its "index" — echo that same index back:
+{items_json}
+
+Respond with ONE JSON object per line (JSON Lines format), one line per input row:
+  {{"index": (same index as the input row), "category": (one of the categories above)}}
+
+No array brackets, no commas between lines, no explanation, no markdown."""
+
+    max_tokens = max(512, len(items) * _TOKENS_PER_ROW)
+    raw = ai_generate(
+        prompt, max_tokens=max_tokens,
+        claude_model="claude-sonnet-4-6", gemini_model="gemini-3.6-flash",
+        search=search,
+    )
     if raw.startswith("```"):
         raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
+        if raw.startswith("json") or raw.startswith("jsonl"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw
 
-    categorised = json.loads(raw)
-    category_map = {item["index"]: item["category"] for item in categorised}
+    category_map = {}
+    for line in raw.splitlines():
+        line = line.strip().strip(",")
+        if not line:
+            continue
+        try:
+            item = json.loads(line)
+            category_map[item["index"]] = item["category"]
+        except (json.JSONDecodeError, KeyError, TypeError):
+            continue  # skip malformed lines instead of failing the whole batch
+    return category_map
+
+
+def _categorise_batches(items: list[dict], search: bool) -> dict:
+    """Run _run_categorisation in chunks of _CATEGORISE_BATCH_SIZE, merging the results."""
+    category_map = {}
+    for start in range(0, len(items), _CATEGORISE_BATCH_SIZE):
+        batch = items[start:start + _CATEGORISE_BATCH_SIZE]
+        category_map.update(_run_categorisation(batch, search=search))
+    return category_map
+
+
+def _categorise_with_claude(rows: list[dict]) -> list[dict]:
+    """
+    Categorise every row with Claude/Gemini, in batches of _CATEGORISE_BATCH_SIZE
+    so a large statement can't blow a single call's output budget. Rows that come
+    back "Other" get one retry with web search enabled, since that's usually an
+    unfamiliar merchant name rather than a genuinely uncategorisable transaction —
+    search is only spent on that smaller subset to keep the extra cost bounded.
+    """
+    items = [{"index": i, **row} for i, row in enumerate(rows)]
+    category_map = _categorise_batches(items, search=False)
+
+    unresolved = [
+        items[i] for i in range(len(rows))
+        if category_map.get(i, "Other") not in VALID_CATEGORIES or category_map.get(i) == "Other"
+    ]
+    if unresolved:
+        category_map.update(_categorise_batches(unresolved, search=True))
 
     for i, row in enumerate(rows):
         cat = category_map.get(i, "Other")
@@ -138,12 +188,49 @@ No explanation, no markdown, just the JSON array."""
 # Claude full extraction for PDFs (date + amounts + category in one call)
 # ----------------------------------------------------------------
 
+# Chars per page sent to the model, with overlap so a transaction line split
+# across a page boundary still appears whole in at least one page. The overlap
+# means the same transaction can get extracted twice from adjacent pages —
+# _dedupe_extracted_rows() below collapses those back down.
+_PDF_CHUNK_CHARS = 10_000
+_PDF_CHUNK_OVERLAP = 500
+
+
+def _dedupe_extracted_rows(rows: list[dict]) -> list[dict]:
+    seen = set()
+    deduped = []
+    for row in rows:
+        key = (row.get("date"), row.get("description"), row.get("withdrawal"), row.get("credit"))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+    return deduped
+
+
 def _extract_transactions_from_pdf_text(raw_text: str) -> list[dict]:
     """
-    Ask Claude to extract fully-structured transactions from PDF bank statement text.
-    This is used instead of _categorise_with_claude for PDFs because pdfplumber
-    gives us raw text/tables that don't have cleanly separated amount columns yet.
-    Claude reads the full statement text and returns structured rows directly.
+    Page through the PDF text so multi-page statements aren't silently truncated,
+    and ask Claude (or Gemini fallback) to extract each page's transactions.
+    """
+    step = _PDF_CHUNK_CHARS - _PDF_CHUNK_OVERLAP
+    all_rows = []
+    for start in range(0, max(len(raw_text), 1), step):
+        chunk = raw_text[start:start + _PDF_CHUNK_CHARS]
+        if chunk.strip():
+            all_rows.extend(_extract_transactions_from_chunk(chunk))
+        if start + _PDF_CHUNK_CHARS >= len(raw_text):
+            break
+    return _dedupe_extracted_rows(all_rows)
+
+
+def _extract_transactions_from_chunk(raw_text: str) -> list[dict]:
+    """
+    Ask Claude (or Gemini fallback) to extract fully-structured transactions
+    from one page-sized slice of PDF bank statement text. This is used instead
+    of _categorise_with_claude for PDFs because pdfplumber gives us raw
+    text/tables that don't have cleanly separated amount columns yet — the
+    model reads the statement text and returns structured rows directly.
     """
     prompt = f"""You are parsing a Singapore bank statement (DBS, OCBC, or UOB).
 
@@ -175,24 +262,30 @@ Important:
 
 Bank statement text:
 ---
-{raw_text[:12000]}
+{raw_text}
 ---
 
-Respond with ONLY the JSON array. No explanation, no markdown fences."""
+Respond with ONE JSON object per line (JSON Lines format) — one line per transaction.
+No array brackets, no commas between lines, no explanation, no markdown fences."""
 
-    message = claude.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
+    raw = ai_generate(
+        prompt, max_tokens=4096,
+        claude_model="claude-sonnet-4-6", gemini_model="gemini-3.6-flash",
     )
-
-    raw = message.content[0].text.strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
+        if raw.startswith("json") or raw.startswith("jsonl"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw
 
-    rows = json.loads(raw)
+    rows = []
+    for line in raw.splitlines():
+        line = line.strip().strip(",")
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue  # skip malformed lines instead of failing the whole statement
 
     # Validate each row defensively — Claude can hallucinate
     clean = []
@@ -251,8 +344,18 @@ def _get_or_create_account(user_id: str, bank: str) -> str:
     return new_account.data[0]["id"]
 
 
-def _insert_transactions(account_id: str, user_id: str, rows: list[dict]) -> list[str]:
-    """Bulk-insert transactions; return list of inserted IDs."""
+# Must exactly match the expression list in the transactions_dedup_idx unique
+# index (supabase/migrations/002_dedup_transactions.sql) — this is what tells
+# Postgres which conflicts to treat as "already have this one, skip it".
+_DEDUP_CONFLICT_TARGET = "account_id,date,description,coalesce(withdrawal,0),coalesce(credit,0)"
+
+
+def _insert_transactions(account_id: str, user_id: str, rows: list[dict]) -> tuple[list[str], int]:
+    """
+    Bulk-insert transactions, skipping any that exactly match a transaction
+    already on this account (same date/description/amount) — re-uploading the
+    same statement should not double the ledger. Returns (inserted_ids, skipped_count).
+    """
     records = []
     for row in rows:
         withdrawal = row.get("withdrawal")
@@ -278,10 +381,16 @@ def _insert_transactions(account_id: str, user_id: str, rows: list[dict]) -> lis
         })
 
     if not records:
-        return []
+        return [], 0
 
-    result = supabase.table("transactions").insert(records).execute()
-    return [r["id"] for r in result.data]
+    result = (
+        supabase.table("transactions")
+        .upsert(records, on_conflict=_DEDUP_CONFLICT_TARGET, ignore_duplicates=True)
+        .execute()
+    )
+    inserted_ids = [r["id"] for r in result.data]
+    skipped = len(records) - len(inserted_ids)
+    return inserted_ids, skipped
 
 
 def _insert_ledger_entries(user_id: str, transactions: list[dict]) -> None:
@@ -367,7 +476,7 @@ async def upload_statement(
     if not rows:
         raise HTTPException(status_code=422, detail="No transactions found in the uploaded file.")
 
-    # --- Categorise with Claude (CSV only — PDFs already have categories from extraction) ---
+    # --- Categorise with Claude/Gemini (CSV only — PDFs already have categories from extraction) ---
     if not is_pdf:
         try:
             rows = _categorise_with_claude(rows)
@@ -376,7 +485,7 @@ async def upload_statement(
 
     # --- Write to database ---
     account_id = _get_or_create_account(user_id, bank)
-    tx_ids = _insert_transactions(account_id, user_id, rows)
+    tx_ids, skipped_duplicates = _insert_transactions(account_id, user_id, rows)
 
     if tx_ids:
         inserted_txs = (
@@ -392,4 +501,5 @@ async def upload_statement(
         "status": "ok",
         "account_id": account_id,
         "transactions_imported": len(tx_ids),
+        "duplicates_skipped": skipped_duplicates,
     }

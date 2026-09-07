@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.dependencies import get_current_user, limiter
 from app.core.database import supabase
+from app.core.pagination import fetch_all
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -23,23 +24,20 @@ async def spending_by_category(
 ):
     user_id = current_user["id"]
 
-    query = (
-        supabase.table("transactions")
-        .select("category, withdrawal")
-        .eq("user_id", user_id)
-    )
+    def make_query():
+        q = supabase.table("transactions").select("category, withdrawal").eq("user_id", user_id)
+        if date_from:
+            q = q.gte("date", date_from)
+        if date_to:
+            q = q.lte("date", date_to)
+        return q
 
-    if date_from:
-        query = query.gte("date", date_from)
-    if date_to:
-        query = query.lte("date", date_to)
+    data = fetch_all(make_query)
 
-    result = query.execute()
-
-    if not result.data:
+    if not data:
         return {"categories": [], "total_spent": 0}
 
-    df = pd.DataFrame(result.data)
+    df = pd.DataFrame(data)
     df["withdrawal"] = pd.to_numeric(df["withdrawal"], errors="coerce").fillna(0)
 
     breakdown = (
@@ -78,23 +76,20 @@ async def spending_over_time(
 
     user_id = current_user["id"]
 
-    query = (
-        supabase.table("transactions")
-        .select("date, withdrawal")
-        .eq("user_id", user_id)
-    )
+    def make_query():
+        q = supabase.table("transactions").select("date, withdrawal").eq("user_id", user_id)
+        if date_from:
+            q = q.gte("date", date_from)
+        if date_to:
+            q = q.lte("date", date_to)
+        return q
 
-    if date_from:
-        query = query.gte("date", date_from)
-    if date_to:
-        query = query.lte("date", date_to)
+    data = fetch_all(make_query)
 
-    result = query.execute()
-
-    if not result.data:
+    if not data:
         return {"data_points": []}
 
-    df = pd.DataFrame(result.data)
+    df = pd.DataFrame(data)
     df["date"] = pd.to_datetime(df["date"])
     df["withdrawal"] = pd.to_numeric(df["withdrawal"], errors="coerce").fillna(0)
 
@@ -129,23 +124,24 @@ async def detect_anomalies(
 ):
     user_id = current_user["id"]
 
-    query = (
-        supabase.table("transactions")
-        .select("id, date, description, category, withdrawal")
-        .eq("user_id", user_id)
-    )
+    def make_query():
+        q = (
+            supabase.table("transactions")
+            .select("id, date, description, category, withdrawal")
+            .eq("user_id", user_id)
+        )
+        if date_from:
+            q = q.gte("date", date_from)
+        if date_to:
+            q = q.lte("date", date_to)
+        return q
 
-    if date_from:
-        query = query.gte("date", date_from)
-    if date_to:
-        query = query.lte("date", date_to)
+    data = fetch_all(make_query)
 
-    result = query.execute()
-
-    if not result.data:
+    if not data:
         return {"anomalies": []}
 
-    df = pd.DataFrame(result.data)
+    df = pd.DataFrame(data)
     df["withdrawal"] = pd.to_numeric(df["withdrawal"], errors="coerce")
     df = df[df["withdrawal"].notna() & (df["withdrawal"] > 0)]
 

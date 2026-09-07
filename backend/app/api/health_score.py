@@ -3,19 +3,18 @@ import logging
 from calendar import monthrange
 from datetime import date
 
-import anthropic
 import pandas as pd
 from fastapi import APIRouter, Depends, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from app.api.dependencies import get_current_user
-from app.core.config import ANTHROPIC_API_KEY
+from app.core.ai_client import ai_generate
 from app.core.database import supabase
+from app.core.pagination import fetch_all
 
 router = APIRouter(prefix="/health-score", tags=["health"])
 limiter = Limiter(key_func=get_remote_address)
-claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------
@@ -25,15 +24,15 @@ logger = logging.getLogger(__name__)
 def _savings_rate(user_id: str, month_start: str, today: str):
     income = sum(
         float(r["credit"])
-        for r in supabase.table("transactions").select("credit")
-        .eq("user_id", user_id).eq("category", "Income")
-        .gte("date", month_start).lte("date", today).execute().data
+        for r in fetch_all(lambda: supabase.table("transactions").select("credit")
+            .eq("user_id", user_id).eq("category", "Income")
+            .gte("date", month_start).lte("date", today))
         if r["credit"]
     )
     spend = sum(
         float(r["withdrawal"])
-        for r in supabase.table("transactions").select("withdrawal")
-        .eq("user_id", user_id).gte("date", month_start).lte("date", today).execute().data
+        for r in fetch_all(lambda: supabase.table("transactions").select("withdrawal")
+            .eq("user_id", user_id).gte("date", month_start).lte("date", today))
         if r["withdrawal"]
     )
     if income <= 0:
@@ -50,10 +49,8 @@ def _savings_rate(user_id: str, month_start: str, today: str):
 
 
 def _expense_consistency(user_id: str, month_start: str, today: str):
-    rows = (
-        supabase.table("transactions").select("date, withdrawal")
-        .eq("user_id", user_id).gte("date", month_start).lte("date", today).execute().data
-    )
+    rows = fetch_all(lambda: supabase.table("transactions").select("date, withdrawal")
+        .eq("user_id", user_id).gte("date", month_start).lte("date", today))
     if not rows:
         return 12.0, {"cv": None}
 
@@ -72,16 +69,12 @@ def _expense_consistency(user_id: str, month_start: str, today: str):
 
 
 def _bill_regularity(user_id: str, month_start: str, month_end: str):
-    tx_count = len(
-        supabase.table("transactions").select("id")
+    tx_count = len(fetch_all(lambda: supabase.table("transactions").select("id")
         .eq("user_id", user_id).eq("category", "Bills & Utilities")
-        .gte("date", month_start).lte("date", month_end).execute().data
-    )
-    plan_count = len(
-        supabase.table("planned_expenses").select("id")
+        .gte("date", month_start).lte("date", month_end)))
+    plan_count = len(fetch_all(lambda: supabase.table("planned_expenses").select("id")
         .eq("user_id", user_id).eq("category", "Bills & Utilities")
-        .gte("due_date", month_start).lte("due_date", month_end).execute().data
-    )
+        .gte("due_date", month_start).lte("due_date", month_end)))
     if tx_count > 0 and plan_count > 0:
         score = 25.0
     elif tx_count > 0 or plan_count > 0:
@@ -91,34 +84,32 @@ def _bill_regularity(user_id: str, month_start: str, month_end: str):
     return score, {"bill_transactions": tx_count, "planned_bills": plan_count}
 
 
-def _budget_adherence(user_id: str, month_start: str, today: str, days_elapsed: int):
-    days_in_month = monthrange(date.today().year, date.today().month)[1]
-
+def _budget_adherence(user_id: str, month_start: str, today: str, days_elapsed: int, days_in_month: int):
     income = sum(
         float(r["credit"])
-        for r in supabase.table("transactions").select("credit")
-        .eq("user_id", user_id).eq("category", "Income")
-        .gte("date", month_start).lte("date", today).execute().data
+        for r in fetch_all(lambda: supabase.table("transactions").select("credit")
+            .eq("user_id", user_id).eq("category", "Income")
+            .gte("date", month_start).lte("date", today))
         if r["credit"]
     )
     bills = sum(
         float(r["amount"])
-        for r in supabase.table("planned_expenses").select("amount")
-        .eq("user_id", user_id).eq("category", "Bills & Utilities")
-        .gte("due_date", month_start).execute().data
+        for r in fetch_all(lambda: supabase.table("planned_expenses").select("amount")
+            .eq("user_id", user_id).eq("category", "Bills & Utilities")
+            .gte("due_date", month_start))
         if r["amount"]
     )
     planned = sum(
         float(r["amount"])
-        for r in supabase.table("planned_expenses").select("amount")
-        .eq("user_id", user_id).neq("category", "Bills & Utilities")
-        .gte("due_date", month_start).execute().data
+        for r in fetch_all(lambda: supabase.table("planned_expenses").select("amount")
+            .eq("user_id", user_id).neq("category", "Bills & Utilities")
+            .gte("due_date", month_start))
         if r["amount"]
     )
     total_spend = sum(
         float(r["withdrawal"])
-        for r in supabase.table("transactions").select("withdrawal")
-        .eq("user_id", user_id).gte("date", month_start).lte("date", today).execute().data
+        for r in fetch_all(lambda: supabase.table("transactions").select("withdrawal")
+            .eq("user_id", user_id).gte("date", month_start).lte("date", today))
         if r["withdrawal"]
     )
 
@@ -146,22 +137,18 @@ def _ai_tip(weakest: str, detail: dict) -> str:
         "budget_adherence": "budget adherence (staying within your daily budget)",
     }
     try:
-        msg = claude.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=150,
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"You are a friendly personal finance advisor for a Singapore budgeting app.\n"
-                    f"The user's weakest financial health dimension is: {labels.get(weakest, weakest)}.\n"
-                    f"Data: {json.dumps(detail, default=str)}\n\n"
-                    f"Write ONE short, specific, actionable tip (2-3 sentences) to help them improve. "
-                    f"Be direct. Singapore context where relevant (CPF, hawker centres, EZ-Link). "
-                    f"No generic platitudes."
-                ),
-            }],
+        prompt = (
+            f"You are a friendly personal finance advisor for a Singapore budgeting app.\n"
+            f"The user's weakest financial health dimension is: {labels.get(weakest, weakest)}.\n"
+            f"Data: {json.dumps(detail, default=str)}\n\n"
+            f"Write ONE short, specific, actionable tip (2-3 sentences) to help them improve. "
+            f"Be direct. Singapore context where relevant (CPF, hawker centres, EZ-Link). "
+            f"No generic platitudes."
         )
-        return msg.content[0].text.strip()
+        return ai_generate(
+            prompt, max_tokens=150,
+            claude_model="claude-haiku-4-5-20251001", gemini_model="gemini-3.5-flash-lite",
+        )
     except Exception as e:
         logger.error(f"AI tip generation failed: {e}")
         return "Keep tracking your expenses consistently — small daily habits compound into big results."
@@ -174,18 +161,29 @@ def _ai_tip(weakest: str, detail: dict) -> str:
 @router.get("")
 @limiter.limit("10/minute")
 async def get_health_score(request: Request, current_user: dict = Depends(get_current_user)):
-    today = date.today()
-    month_start = str(today.replace(day=1))
-    today_str = str(today)
-    days_in_month = monthrange(today.year, today.month)[1]
-    month_end = str(today.replace(day=days_in_month))
-
     user_id = current_user["id"]
+    real_today = date.today()
+
+    # Score the most recent month that actually has transactions, not necessarily the
+    # current calendar month — bank statements are usually for a just-closed month, so
+    # scoring strictly "this month" would show empty-data fallback values right after upload.
+    latest = (
+        supabase.table("transactions").select("date")
+        .eq("user_id", user_id).order("date", desc=True).limit(1).execute().data
+    )
+    ref = date.fromisoformat(latest[0]["date"]) if latest else real_today
+
+    days_in_month = monthrange(ref.year, ref.month)[1]
+    month_start = str(ref.replace(day=1))
+    month_end = str(ref.replace(day=days_in_month))
+    is_current_month = (ref.year, ref.month) == (real_today.year, real_today.month)
+    today_str = str(real_today) if is_current_month else month_end
+    days_elapsed = real_today.day if is_current_month else days_in_month
 
     s_score, s_detail = _savings_rate(user_id, month_start, today_str)
     c_score, c_detail = _expense_consistency(user_id, month_start, today_str)
     b_score, b_detail = _bill_regularity(user_id, month_start, month_end)
-    a_score, a_detail = _budget_adherence(user_id, month_start, today_str, today.day)
+    a_score, a_detail = _budget_adherence(user_id, month_start, today_str, days_elapsed, days_in_month)
 
     dimensions = {
         "savings_rate":        {"score": s_score, "max": 25, "label": "Savings Rate",        "detail": s_detail},
@@ -202,5 +200,5 @@ async def get_health_score(request: Request, current_user: dict = Depends(get_cu
         "dimensions": dimensions,
         "weakest_dimension": weakest,
         "ai_tip": _ai_tip(weakest, dimensions[weakest]["detail"]),
-        "month": today.strftime("%B %Y"),
+        "month": ref.strftime("%B %Y"),
     }

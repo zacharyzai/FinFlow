@@ -5,11 +5,13 @@
     </Transition>
   </RouterView>
   <CommandPalette :open="paletteOpen" @close="paletteOpen = false" />
+  <ToastContainer />
 </template>
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import CommandPalette from '@/components/CommandPalette.vue'
+import ToastContainer from '@/components/ToastContainer.vue'
 import { usePalette } from '@/composables/usePalette'
 
 const { open: paletteOpen } = usePalette()

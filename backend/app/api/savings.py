@@ -107,6 +107,7 @@ async def update_saved(
         supabase.table("savings_goals")
         .update({"saved": body.saved})
         .eq("id", id)
+        .eq("user_id", current_user["id"])
         .execute()
     )
     return {"goal": _enrich_goal(result.data[0])}
@@ -129,5 +130,5 @@ async def delete_goal(
     if not existing.data:
         raise HTTPException(status_code=404, detail="Goal not found")
 
-    supabase.table("savings_goals").delete().eq("id", id).execute()
+    supabase.table("savings_goals").delete().eq("id", id).eq("user_id", current_user["id"]).execute()
     return {"deleted": id}

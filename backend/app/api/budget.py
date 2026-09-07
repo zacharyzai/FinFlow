@@ -101,7 +101,7 @@ async def delete_expense(
     if not existing.data:
         raise HTTPException(status_code=404, detail="Expense not found")
 
-    supabase.table("planned_expenses").delete().eq("id", id).execute()
+    supabase.table("planned_expenses").delete().eq("id", id).eq("user_id", current_user["id"]).execute()
 
     return {"deleted": id}
 

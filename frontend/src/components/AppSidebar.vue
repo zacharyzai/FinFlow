@@ -42,14 +42,17 @@
     <div class="ff-section-label ff-fade-text ff-accounts-label">Accounts</div>
     <div class="ff-accounts">
       <div
-        v-for="acc in accounts"
-        :key="acc.name"
+        v-for="acc in accountsStore.accounts"
+        :key="acc.id"
         class="ff-account-item"
-        :title="!isOpen ? `${acc.name} · ${acc.balance}` : undefined"
+        :title="!isOpen ? `${acc.name} · ${formatBalance(acc.balance)}` : undefined"
       >
         <span class="ff-account-dot" :style="`background:${acc.color}`"></span>
         <span class="ff-fade-text ff-account-name">{{ acc.name }}</span>
-        <span class="ff-fade-text ff-account-balance">{{ acc.balance }}</span>
+        <span class="ff-fade-text ff-account-balance">{{ formatBalance(acc.balance) }}</span>
+      </div>
+      <div v-if="!accountsStore.loading && accountsStore.accounts.length === 0" class="ff-fade-text ff-account-empty">
+        No accounts yet
       </div>
     </div>
 
@@ -93,9 +96,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 import { useAuthStore } from '@/stores/auth'
+import { useAccountsStore } from '@/stores/accounts'
 import { useRouter } from 'vue-router'
 import { useSidebar } from '@/composables/useSidebar'
 import FinFlowLogo from '@/components/FinFlowLogo.vue'
@@ -104,7 +108,14 @@ const { isOpen } = useSidebar()
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const auth = useAuthStore()
+const accountsStore = useAccountsStore()
 const router = useRouter()
+
+onMounted(() => accountsStore.fetch())
+
+function formatBalance(n) {
+  return new Intl.NumberFormat('en-SG', { style: 'currency', currency: 'SGD', maximumFractionDigits: 0 }).format(n)
+}
 
 const initials = computed(() => (auth.user?.email ?? '').slice(0, 2).toUpperCase())
 const displayName = computed(() => (auth.user?.email ?? '').split('@')[0] || 'You')
@@ -123,11 +134,6 @@ const NAV = [
   { to: '/upload',       label: 'Statements',      icon: 'description' },
 ]
 
-// ponytail: hardcoded until accounts store is wired up
-const accounts = [
-  { name: 'DBS Multiplier', color: 'var(--brand)', balance: '$8,420' },
-  { name: 'OCBC 360',       color: 'var(--sage)',  balance: '$3,115' },
-]
 </script>
 
 <style scoped>
@@ -331,6 +337,11 @@ const accounts = [
 .ff-account-name { flex: 1; }
 .ff-account-balance {
   font: 500 11px 'IBM Plex Mono';
+  color: var(--text-3);
+}
+.ff-account-empty {
+  padding: 8px 11px;
+  font: 400 12px 'IBM Plex Sans';
   color: var(--text-3);
 }
 

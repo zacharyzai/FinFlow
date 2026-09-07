@@ -1,8 +1,11 @@
 import axios from 'axios'
 import { supabase } from './supabase'
 
+// In dev, '/api' goes through the Vite proxy (vite.config.js) to localhost:8000.
+// In production there's no proxy, so VITE_API_URL must point at the deployed
+// FastAPI backend directly (e.g. https://finflow-api.up.railway.app).
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
 })
 
 // Attach the Supabase JWT to every request
@@ -55,5 +58,8 @@ export default api
 export const transactionApi = {
   create(data) {
     return api.post('/transactions', data)
-  }
+  },
+  update(id, data) {
+    return api.patch(`/transactions/${id}`, data)
+  },
 }

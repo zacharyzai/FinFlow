@@ -89,6 +89,14 @@ create index transactions_date_idx       on public.transactions(date desc);
 create index transactions_state_idx      on public.transactions(state);
 create index transactions_category_idx   on public.transactions(category);
 
+-- Dedup guard: re-uploading the same statement (or the same PDF/CSV twice)
+-- must not double-insert. coalesce(...,0) so two NULLs in the unused
+-- withdrawal/credit slot count as equal for uniqueness purposes — a plain
+-- unique constraint would treat NULL <> NULL and let the duplicate through.
+create unique index transactions_dedup_idx on public.transactions (
+  account_id, date, description, coalesce(withdrawal, 0), coalesce(credit, 0)
+);
+
 create trigger transactions_updated_at
   before update on public.transactions
   for each row execute procedure public.set_updated_at();

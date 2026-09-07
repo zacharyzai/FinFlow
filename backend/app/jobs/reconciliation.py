@@ -15,6 +15,7 @@ import logging
 from datetime import datetime, timezone
 
 from app.core.database import supabase
+from app.core.pagination import fetch_all
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +23,16 @@ logger = logging.getLogger(__name__)
 def run_reconciliation():
     logger.info("Reconciliation job started")
 
-    pending = (
-        supabase.table("transactions")
-        .select("id")
-        .eq("state", "PENDING")
-        .execute()
-    )
+    # This runs across ALL users, so it's the query most likely of anyone's
+    # to exceed PostgREST's 1000-row response cap — must paginate.
+    pending = fetch_all(lambda: supabase.table("transactions").select("id").eq("state", "PENDING"))
 
-    if not pending.data:
+    if not pending:
         logger.info("No PENDING transactions — nothing to reconcile")
         _write_log(0, 0)
         return
 
-    tx_ids = [r["id"] for r in pending.data]
+    tx_ids = [r["id"] for r in pending]
     cleared = 0
     discrepancies = 0
 

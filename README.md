@@ -79,7 +79,7 @@ Under the hood, every transaction is recorded using a **double-entry ledger** an
 | Uvicorn | `standard` | ASGI server for FastAPI |
 | Pandas | `2.2` | CSV parsing, categorisation, analytics |
 | pdfplumber | `0.11` | PDF table extraction before Claude parsing |
-| Anthropic SDK | `0.28` | Claude API client for AI parsing |
+| Anthropic SDK | `0.104` | Claude API client for AI parsing (falls back to Gemini via Google Gen AI SDK) |
 | Supabase Python | `2.4` | Server-side DB reads and writes |
 | APScheduler | `3.10` | Nightly 2AM reconciliation cron job |
 | slowapi | `0.1` | Rate limiting on upload endpoint |
@@ -97,7 +97,7 @@ Under the hood, every transaction is recorded using a **double-entry ledger** an
 ### AI & Integrations
 | Service | Provider | Role |
 |---|---|---|
-| AI Parsing | Claude API (Anthropic) | PDF statement reading and categorisation |
+| AI Parsing | Claude API (Anthropic), falls back to Gemini | PDF statement reading and categorisation |
 | SGD FX Rates | MAS API | Official Monetary Authority of Singapore rates |
 | Multi-currency | Exchange Rates API | Live forex conversion |
 | Calendar Sync | Google Calendar API | Push planned expenses to user's calendar |
@@ -151,7 +151,7 @@ Notify     →  Telegram Bot sends daily budget reminder; Resend delivers monthl
 | Authentication | Supabase Auth with JWT sessions. Google OAuth supported. MFA available. |
 | Row Level Security | RLS enforced on every table — users can only query their own rows, enforced at DB level. |
 | File Handling | Statements stored in private Supabase buckets. Deleted immediately post-parse. Signed URLs with short expiry. |
-| API Keys | All keys (Claude, Supabase service role, Telegram) stored server-side in `.env` only. Never sent to client. |
+| API Keys | All keys (Claude, Gemini, Supabase service role, Telegram) stored server-side in `.env` only. Never sent to client. |
 | Logging Policy | No financial data (amounts, merchant names) in server logs. Only event types and user IDs. |
 | Rate Limiting | Upload and parse endpoints rate-limited via slowapi to prevent abuse and control AI costs. |
 | PDPA Compliance | Data minimisation applied — only store what the app needs. User can delete all data on request. |
@@ -164,7 +164,7 @@ Notify     →  Telegram Bot sends daily budget reminder; Resend delivers monthl
 - Python 3.11+
 - Node.js 18+
 - A [Supabase](https://supabase.com) project
-- An [Anthropic API key](https://console.anthropic.com)
+- An [Anthropic API key](https://console.anthropic.com) (or a [Gemini API key](https://aistudio.google.com/apikey) as a free fallback)
 
 ### Backend Setup
 
@@ -209,6 +209,7 @@ npm run dev
 ```env
 # Backend (.env)
 ANTHROPIC_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 TELEGRAM_BOT_TOKEN=your_bot_token

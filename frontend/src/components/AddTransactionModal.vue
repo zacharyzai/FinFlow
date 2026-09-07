@@ -79,16 +79,12 @@
 import { ref, watch, nextTick } from 'vue'
 import { onKeyStroke } from '@vueuse/core'
 import { useTransactionsStore } from '@/stores/transactions'
+import { CATEGORIES } from '@/constants'
 
 const props = defineProps({ open: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
 
 const store = useTransactionsStore()
-
-const CATEGORIES = [
-  'Food & Dining', 'Transport', 'Shopping', 'Bills & Utilities', 'Healthcare',
-  'Entertainment', 'Travel', 'Education', 'Income', 'Transfer', 'Other',
-]
 
 const today = () => new Date().toISOString().slice(0, 10)
 

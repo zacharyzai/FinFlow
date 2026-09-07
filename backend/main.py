@@ -10,6 +10,7 @@ from slowapi.errors import RateLimitExceeded
 from app.api import analytics, budget, statements, transactions
 from app.api import savings, health_score
 from app.api.dependencies import limiter
+from app.core.config import CORS_ORIGINS
 from app.jobs.reconciliation import run_reconciliation
 from app.router.auth import router as auth_router
 
@@ -21,7 +22,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

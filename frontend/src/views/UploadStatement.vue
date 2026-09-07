@@ -3,7 +3,7 @@
 
     <!-- ── PROCESSING ───────────────────────────────────────────────── -->
     <div
-      v-if="phase === 'processing'"
+      v-if="job.phase === 'processing'"
       key="processing"
       class="bg-white dark:bg-[#1a2e2b] border border-slate-200 dark:border-[#7C9E8C]/20 rounded-2xl p-8"
     >
@@ -17,17 +17,17 @@
           v-for="(step, i) in STEPS"
           :key="step.label"
           class="relative flex items-center gap-4 rounded-xl px-3 py-3 transition-colors duration-300"
-          :class="i === currentStep ? 'step-shimmer' : ''"
+          :class="i === job.currentStep ? 'step-shimmer' : ''"
         >
           <!-- Step indicator circle -->
           <div
             class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
-            :class="i <= currentStep
+            :class="i <= job.currentStep
               ? 'bg-[#7C9E8C]/20 text-[#7C9E8C]'
               : 'bg-slate-100 dark:bg-slate-700/60 text-slate-400'"
           >
             <!-- Done: stroke draws in on mount -->
-            <svg v-if="i < currentStep" viewBox="0 0 16 16" fill="none" class="w-4 h-4">
+            <svg v-if="i < job.currentStep" viewBox="0 0 16 16" fill="none" class="w-4 h-4">
               <path
                 d="M3 8l3.5 3.5L13 5"
                 stroke="currentColor" stroke-width="2.2"
@@ -37,7 +37,7 @@
               />
             </svg>
             <!-- Active: solid dot (no spinner) -->
-            <div v-else-if="i === currentStep" class="w-2.5 h-2.5 rounded-full bg-[#7C9E8C]" />
+            <div v-else-if="i === job.currentStep" class="w-2.5 h-2.5 rounded-full bg-[#7C9E8C]" />
             <!-- Pending: step number -->
             <span v-else class="text-xs font-medium select-none">{{ i + 1 }}</span>
           </div>
@@ -46,7 +46,7 @@
           <div>
             <p
               class="text-sm font-medium transition-colors duration-300"
-              :class="i <= currentStep
+              :class="i <= job.currentStep
                 ? 'text-slate-900 dark:text-white'
                 : 'text-slate-400 dark:text-slate-500'"
             >{{ step.label }}</p>
@@ -58,7 +58,7 @@
 
     <!-- ── SUCCESS ────────────────────────────────────────────────────── -->
     <div
-      v-else-if="phase === 'success'"
+      v-else-if="job.phase === 'success'"
       key="success"
       class="bg-white dark:bg-[#1a2e2b] border border-[#7C9E8C]/30 rounded-2xl p-10 text-center"
     >
@@ -84,6 +84,9 @@
       <div class="mb-6">
         <span class="text-4xl font-bold text-[#7C9E8C] tabular-nums">{{ Math.round(displayCount) }}</span>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">transactions imported to your ledger</p>
+        <p v-if="job.result?.duplicates_skipped" class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+          {{ job.result.duplicates_skipped }} duplicate{{ job.result.duplicates_skipped === 1 ? '' : 's' }} already in your ledger — skipped
+        </p>
       </div>
 
       <!-- Privacy confirmation -->
@@ -110,7 +113,7 @@
     </div>
 
     <!-- ── FORM ───────────────────────────────────────────────────────── -->
-    <form v-else key="form" @submit.prevent="handleSubmit" class="space-y-6">
+    <form v-else-if="job.phase === 'idle' || job.phase === 'error'" key="form" @submit.prevent="handleSubmit" class="space-y-6">
 
       <!-- Bank selector -->
       <div>
@@ -193,11 +196,11 @@
       <!-- Validation error (slide-down is already in style.css from login) -->
       <Transition name="slide-down">
         <p
-          v-if="errorMsg"
+          v-if="errorMsg || job.errorMsg"
           role="alert"
           class="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-3"
         >
-          {{ errorMsg }}
+          {{ errorMsg || job.errorMsg }}
         </p>
       </Transition>
 
@@ -218,11 +221,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { statementsApi } from '@/services/api'
+import { ref, computed, watch } from 'vue'
+import { useUploadJobStore } from '@/stores/uploadJob'
 import { useCountUp } from '@/composables/useCountUp'
 
 const emit = defineEmits(['uploaded'])
+const job = useUploadJobStore()
 
 const BANKS = [
   { label: 'DBS',   value: 'DBS' },
@@ -244,11 +248,15 @@ const bank        = ref('DBS')
 const file        = ref(null)
 const fileInput   = ref(null)
 const dragOver    = ref(false)
-const phase       = ref('form')       // 'form' | 'processing' | 'success'
-const currentStep = ref(-1)
 const errorMsg    = ref('')
 const txCount     = ref(0)
 const displayCount = useCountUp(txCount, 800)
+
+// Re-run the count-up whenever a result lands — covers both "just finished
+// while I was on this page" and "I navigated back after it finished".
+watch(() => job.result, (result) => {
+  if (result) txCount.value = result.transactions_imported ?? 0
+}, { immediate: true })
 
 const fileSize = computed(() => {
   if (!file.value) return ''
@@ -291,41 +299,16 @@ function onDrop(e) {
 }
 
 function reset() {
-  phase.value     = 'form'
+  job.reset()
   file.value      = null
   txCount.value   = 0
   errorMsg.value  = ''
-  currentStep.value = -1
   if (fileInput.value) fileInput.value.value = ''
 }
 
 async function handleSubmit() {
   if (!file.value) return
   errorMsg.value = ''
-  phase.value    = 'processing'
-  currentStep.value = 0
-
-  // Optimistic step advancement — AI step holds until the API responds
-  const t1 = setTimeout(() => { if (currentStep.value === 0) currentStep.value = 1 }, 1500)
-  const t2 = setTimeout(() => { if (currentStep.value <= 1)  currentStep.value = 2 }, 3500)
-
-  try {
-    const { data } = await statementsApi.upload(file.value, bank.value)
-    clearTimeout(t1)
-    clearTimeout(t2)
-    currentStep.value = 3
-    // Brief hold so step 4 checkmark draws before the phase transitions
-    setTimeout(() => {
-      txCount.value = data.transactions_imported ?? 0
-      phase.value   = 'success'
-    }, 700)
-  } catch (e) {
-    clearTimeout(t1)
-    clearTimeout(t2)
-    // FastAPI returns the human-readable reason in detail
-    errorMsg.value = e.response?.data?.detail ?? e.message
-    phase.value    = 'form'
-    currentStep.value = -1
-  }
+  await job.upload(file.value, bank.value)
 }
 </script>
