@@ -43,8 +43,20 @@
               </div>
             </div>
 
-            <!-- Drop zone -->
-            <router-link to="/upload" class="ff-drop-zone">
+            <!-- Drop zone — uploads immediately via the shared upload store,
+                 then routes to /upload so progress/success is visible there -->
+            <div
+              class="ff-drop-zone"
+              :class="{ 'ff-drop-zone-active': dragOver }"
+              role="button"
+              tabindex="0"
+              @click="fileInput?.click()"
+              @keydown.enter="fileInput?.click()"
+              @dragover.prevent="dragOver = true"
+              @dragleave.prevent="dragOver = false"
+              @drop.prevent="onDrop"
+            >
+              <input ref="fileInput" type="file" accept=".pdf,.csv" class="hidden" @change="onFile" />
               <span class="material-symbols-outlined" style="font-size:30px;color:var(--text-3)">file_upload</span>
               <div style="font:600 13.5px 'IBM Plex Sans';color:var(--text);margin-top:8px">Drop a statement, or <span style="text-decoration:underline;text-underline-offset:2px">browse files</span></div>
               <div style="font:400 11.5px 'IBM Plex Sans';color:var(--text-3);margin-top:4px">PDF or CSV · up to 10 MB</div>
@@ -53,7 +65,7 @@
                 <span class="ff-bank-tag">OCBC</span>
                 <span class="ff-bank-tag">UOB</span>
               </div>
-            </router-link>
+            </div>
 
             <div style="display:flex;align-items:center;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid var(--border);font:400 11px 'IBM Plex Sans';color:var(--text-3)">
               <span class="material-symbols-outlined" style="font-size:15px">lock</span>
@@ -255,12 +267,53 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import { useDashboardStore } from '@/stores/dashboard'
+import { useUploadJobStore } from '@/stores/uploadJob'
+import { useToastStore } from '@/stores/toast'
 
 const store = useDashboardStore()
+const router = useRouter()
+const job = useUploadJobStore()
+const toast = useToastStore()
+
+const fileInput = ref(null)
+const dragOver = ref(false)
+const MAX_SIZE = 10 * 1024 * 1024
+
+function validateFile(f) {
+  if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.csv')) {
+    return 'Only PDF and CSV files are supported'
+  }
+  if (f.size > MAX_SIZE) return 'File must be under 10 MB'
+  return null
+}
+
+// No bank selector on this widget (unlike the full /upload form) — default to
+// "Unknown", same as the dedicated form's fallback option.
+function startUpload(f) {
+  const err = validateFile(f)
+  if (err) {
+    toast.push(err, 'error')
+    return
+  }
+  job.upload(f, 'Unknown')
+  router.push('/upload')
+}
+
+function onFile(e) {
+  const f = e.target.files[0]
+  if (f) startUpload(f)
+}
+
+function onDrop(e) {
+  dragOver.value = false
+  const f = e.dataTransfer.files[0]
+  if (f) startUpload(f)
+}
 onMounted(() => store.load())
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -491,6 +544,11 @@ const nextMonthName = computed(() => {
   display: block;
   text-decoration: none;
   cursor: pointer;
+  transition: border-color 150ms ease-out, background 150ms ease-out;
+}
+.ff-drop-zone-active {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 8%, var(--surface-2));
 }
 .ff-bank-tag {
   font: 600 11px 'IBM Plex Mono';

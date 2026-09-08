@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
 from app.core.ai_client import ai_generate
 from app.core.database import supabase
+from app.core.pagination import fetch_all
 
 router = APIRouter(prefix="/statements", tags=["statements"])
 
@@ -344,10 +345,8 @@ def _get_or_create_account(user_id: str, bank: str) -> str:
     return new_account.data[0]["id"]
 
 
-# Must exactly match the expression list in the transactions_dedup_idx unique
-# index (supabase/migrations/002_dedup_transactions.sql) — this is what tells
-# Postgres which conflicts to treat as "already have this one, skip it".
-_DEDUP_CONFLICT_TARGET = "account_id,date,description,coalesce(withdrawal,0),coalesce(credit,0)"
+def _dedup_key(record: dict) -> tuple:
+    return (record["date"], record["description"], record["withdrawal"] or 0, record["credit"] or 0)
 
 
 def _insert_transactions(account_id: str, user_id: str, rows: list[dict]) -> tuple[list[str], int]:
@@ -355,6 +354,13 @@ def _insert_transactions(account_id: str, user_id: str, rows: list[dict]) -> tup
     Bulk-insert transactions, skipping any that exactly match a transaction
     already on this account (same date/description/amount) — re-uploading the
     same statement should not double the ledger. Returns (inserted_ids, skipped_count).
+
+    Dedup is done in Python rather than via Postgres ON CONFLICT: PostgREST's
+    upsert(on_conflict=...) only accepts plain column names, not the
+    coalesce(withdrawal,0)-style expression our unique index needs to treat
+    withdrawal=NULL/credit=NULL correctly — passing an expression there 500s
+    ("column \"coalesce\" does not exist"). The unique index still exists as a
+    DB-level safety net; this is just how we skip duplicates in the common path.
     """
     records = []
     for row in rows:
@@ -383,13 +389,28 @@ def _insert_transactions(account_id: str, user_id: str, rows: list[dict]) -> tup
     if not records:
         return [], 0
 
-    result = (
-        supabase.table("transactions")
-        .upsert(records, on_conflict=_DEDUP_CONFLICT_TARGET, ignore_duplicates=True)
-        .execute()
-    )
+    date_values = [r["date"] for r in records]
+    existing = fetch_all(lambda: supabase.table("transactions")
+        .select("date, description, withdrawal, credit")
+        .eq("account_id", account_id)
+        .gte("date", min(date_values)).lte("date", max(date_values)))
+    seen = {_dedup_key(r) for r in existing}
+
+    skipped = 0
+    new_records = []
+    for record in records:
+        key = _dedup_key(record)
+        if key in seen:
+            skipped += 1
+            continue
+        seen.add(key)  # also collapses duplicates within this same upload
+        new_records.append(record)
+
+    if not new_records:
+        return [], skipped
+
+    result = supabase.table("transactions").insert(new_records).execute()
     inserted_ids = [r["id"] for r in result.data]
-    skipped = len(records) - len(inserted_ids)
     return inserted_ids, skipped
 
 
@@ -484,18 +505,21 @@ async def upload_statement(
             raise HTTPException(status_code=502, detail=f"AI categorisation failed: {e}")
 
     # --- Write to database ---
-    account_id = _get_or_create_account(user_id, bank)
-    tx_ids, skipped_duplicates = _insert_transactions(account_id, user_id, rows)
+    try:
+        account_id = _get_or_create_account(user_id, bank)
+        tx_ids, skipped_duplicates = _insert_transactions(account_id, user_id, rows)
 
-    if tx_ids:
-        inserted_txs = (
-            supabase.table("transactions")
-            .select("*")
-            .in_("id", tx_ids)
-            .execute()
-            .data
-        )
-        _insert_ledger_entries(user_id, inserted_txs)
+        if tx_ids:
+            inserted_txs = (
+                supabase.table("transactions")
+                .select("*")
+                .in_("id", tx_ids)
+                .execute()
+                .data
+            )
+            _insert_ledger_entries(user_id, inserted_txs)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not save transactions: {e}")
 
     return {
         "status": "ok",

@@ -89,10 +89,14 @@ create index transactions_date_idx       on public.transactions(date desc);
 create index transactions_state_idx      on public.transactions(state);
 create index transactions_category_idx   on public.transactions(category);
 
--- Dedup guard: re-uploading the same statement (or the same PDF/CSV twice)
--- must not double-insert. coalesce(...,0) so two NULLs in the unused
--- withdrawal/credit slot count as equal for uniqueness purposes — a plain
--- unique constraint would treat NULL <> NULL and let the duplicate through.
+-- Dedup safety net: app code (statements.py::_insert_transactions) checks for
+-- duplicates in Python before inserting, since PostgREST's upsert(on_conflict=...)
+-- only accepts plain column names, not expressions like coalesce(withdrawal,0) —
+-- passing one 500s ("column \"coalesce\" does not exist"). This index isn't
+-- referenced by the app directly; it's a last-resort DB-level constraint in
+-- case the Python check is ever bypassed. coalesce(...,0) so two NULLs in the
+-- unused withdrawal/credit slot count as equal — a plain unique constraint
+-- would treat NULL <> NULL and let the duplicate through.
 create unique index transactions_dedup_idx on public.transactions (
   account_id, date, description, coalesce(withdrawal, 0), coalesce(credit, 0)
 );
