@@ -104,7 +104,7 @@
 import { ref, onMounted } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import { savingsApi } from '@/services/api'
+import { savingsApi, apiErrorMessage } from '@/services/api'
 
 const loading = ref(true)
 const error = ref(null)
@@ -122,7 +122,7 @@ async function load() {
     // _newSaved and _saving are local UI state, not from API
     goals.value = res.data.goals.map(g => ({ ...g, _newSaved: null, _saving: false }))
   } catch (e) {
-    error.value = e?.response?.data?.detail ?? e.message
+    error.value = apiErrorMessage(e)
   } finally {
     loading.value = false
   }
@@ -137,7 +137,7 @@ async function createGoal() {
     showForm.value = false
     await load()
   } catch (e) {
-    formError.value = e?.response?.data?.detail ?? e.message
+    formError.value = apiErrorMessage(e)
   } finally {
     saving.value = false
   }

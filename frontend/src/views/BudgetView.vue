@@ -63,6 +63,11 @@
                     class="col-span-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a2e2b] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]">
               <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
             </select>
+            <label class="col-span-2 flex items-center gap-2 text-[var(--text-2)] cursor-pointer">
+              <input v-model="form.is_recurring" type="checkbox"
+                     class="rounded border-slate-300 dark:border-white/20 text-[var(--brand)] focus:ring-[var(--brand)]" />
+              Repeats monthly (e.g. rent, subscriptions, utilities)
+            </label>
             <p v-if="formError" class="col-span-2 text-[var(--bad)] text-xs">{{ formError }}</p>
             <div class="col-span-2 flex gap-2 justify-end">
               <button type="button" @click="showForm = false"
@@ -101,7 +106,7 @@
 import { ref, onMounted } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import { budgetApi } from '@/services/api'
+import { budgetApi, apiErrorMessage } from '@/services/api'
 
 const CATEGORIES = ['Bills & Utilities', 'Food & Dining', 'Transport', 'Shopping', 'Healthcare', 'Entertainment', 'Travel', 'Education', 'Other']
 
@@ -112,7 +117,7 @@ const upcoming = ref([])
 const showForm = ref(false)
 const saving = ref(false)
 const formError = ref(null)
-const form = ref({ name: '', amount: '', due_date: '', category: 'Bills & Utilities' })
+const form = ref({ name: '', amount: '', due_date: '', category: 'Bills & Utilities', is_recurring: false })
 
 async function load() {
   loading.value = true
@@ -122,7 +127,7 @@ async function load() {
     budget.value = b.data
     upcoming.value = u.data.expenses
   } catch (e) {
-    error.value = e?.response?.data?.detail ?? e.message
+    error.value = apiErrorMessage(e)
   } finally {
     loading.value = false
   }
@@ -133,11 +138,11 @@ async function addExpense() {
   formError.value = null
   try {
     await budgetApi.addExpense(form.value)
-    form.value = { name: '', amount: '', due_date: '', category: 'Bills & Utilities' }
+    form.value = { name: '', amount: '', due_date: '', category: 'Bills & Utilities', is_recurring: false }
     showForm.value = false
     await load()
   } catch (e) {
-    formError.value = e?.response?.data?.detail ?? e.message
+    formError.value = apiErrorMessage(e)
   } finally {
     saving.value = false
   }

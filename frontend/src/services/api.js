@@ -63,3 +63,25 @@ export const transactionApi = {
     return api.patch(`/transactions/${id}`, data)
   },
 }
+
+// Backend errors carry a `code` alongside the message (see app_error() in
+// app/core/errors.py) so the user can tell what kind of failure this is —
+// AI provider down vs bad input vs rate limited — not just a generic message.
+const ERROR_LABELS = {
+  invalid_input: 'Invalid input',
+  not_found: 'Not found',
+  auth_error: 'Authentication error',
+  unprocessable_file: 'File error',
+  ai_provider_error: 'AI provider error',
+  rate_limited: 'Rate limited',
+  server_error: 'Server error',
+}
+
+export function apiErrorMessage(e) {
+  const detail = e?.response?.data?.detail
+  if (detail && typeof detail === 'object') {
+    const label = ERROR_LABELS[detail.code]
+    return label ? `${label}: ${detail.message}` : detail.message
+  }
+  return detail || e?.message || 'Something went wrong'
+}

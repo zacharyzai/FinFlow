@@ -415,13 +415,17 @@ def goals_professional(today):
 def expenses_professional(today):
     y, m = today.year, today.month
     due = lambda d: str(date(y, m, clamp_day(y, m, d)))
-    return [
+    items = [
         {"name": "StarHub Mobile", "amount": 45.00, "due_date": due(5),  "category": "Bills & Utilities"},
         {"name": "Netflix",        "amount": 18.00, "due_date": due(1),  "category": "Entertainment"},
         {"name": "Spotify",        "amount":  9.90, "due_date": due(5),  "category": "Entertainment"},
         {"name": "SP Services",    "amount": 76.00, "due_date": due(20), "category": "Bills & Utilities"},
         {"name": "Gym Membership", "amount": 60.00, "due_date": due(15), "category": "Healthcare"},
     ]
+    # All of these are real recurring bills — mark them so /budget/upcoming and
+    # /budget/daily keep projecting them into future months instead of the
+    # one seeded due_date going stale the moment this month ends.
+    return [{**e, "is_recurring": True, "recurrence_days": 30} for e in items]
 
 def goals_student(today):
     return [
@@ -433,11 +437,12 @@ def goals_student(today):
 def expenses_student(today):
     y, m = today.year, today.month
     due = lambda d: str(date(y, m, clamp_day(y, m, d)))
-    return [
+    items = [
         {"name": "Singtel SIM Only", "amount": 15.00, "due_date": due(5),  "category": "Bills & Utilities"},
         {"name": "Spotify Student",  "amount":  4.99, "due_date": due(5),  "category": "Entertainment"},
         {"name": "Bus Concession",   "amount": 52.00, "due_date": due(1),  "category": "Transport"},
     ]
+    return [{**e, "is_recurring": True, "recurrence_days": 30} for e in items]
 
 def goals_adult(today):
     return [
@@ -449,7 +454,7 @@ def goals_adult(today):
 def expenses_adult(today):
     y, m = today.year, today.month
     due = lambda d: str(date(y, m, clamp_day(y, m, d)))
-    return [
+    items = [
         {"name": "Room Rental",         "amount": 1400.00, "due_date": due(1),  "category": "Bills & Utilities"},
         {"name": "Singtel Postpaid",    "amount":   65.00, "due_date": due(5),  "category": "Bills & Utilities"},
         {"name": "SP Services",         "amount":  110.00, "due_date": due(18), "category": "Bills & Utilities"},
@@ -457,6 +462,7 @@ def expenses_adult(today):
         {"name": "Netflix",             "amount":   18.00, "due_date": due(7),  "category": "Entertainment"},
         {"name": "Prudential Insurance","amount":  180.00, "due_date": due(10), "category": "Bills & Utilities"},
     ]
+    return [{**e, "is_recurring": True, "recurrence_days": 30} for e in items]
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 

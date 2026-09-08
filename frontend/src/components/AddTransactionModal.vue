@@ -80,6 +80,7 @@ import { ref, watch, nextTick } from 'vue'
 import { onKeyStroke } from '@vueuse/core'
 import { useTransactionsStore } from '@/stores/transactions'
 import { CATEGORIES } from '@/constants'
+import { apiErrorMessage } from '@/services/api'
 
 const props = defineProps({ open: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
@@ -123,7 +124,7 @@ async function handleSubmit() {
     amount.value = ''
     emit('close')
   } catch (e) {
-    errorMsg.value = e.response?.data?.detail || e.message || 'Failed to save transaction.'
+    errorMsg.value = apiErrorMessage(e) || 'Failed to save transaction.'
   } finally {
     loading.value = false
   }

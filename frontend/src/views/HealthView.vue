@@ -58,7 +58,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import { healthScoreApi } from '@/services/api'
+import { healthScoreApi, apiErrorMessage } from '@/services/api'
 
 const loading = ref(true)
 const error = ref(null)
@@ -93,7 +93,7 @@ onMounted(async () => {
     const res = await healthScoreApi.get()
     data.value = res.data
   } catch (e) {
-    error.value = e?.response?.data?.detail ?? e.message
+    error.value = apiErrorMessage(e)
   } finally {
     loading.value = false
   }

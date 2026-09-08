@@ -1,11 +1,12 @@
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
 
 from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
 from app.api.statements import _get_or_create_account, _insert_ledger_entries
 from app.core.database import supabase
+from app.core.errors import app_error
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -70,7 +71,7 @@ async def update_transaction(
         .eq("id", transaction_id).eq("user_id", user_id).limit(1).execute().data
     )
     if not existing:
-        raise HTTPException(status_code=404, detail="Transaction not found")
+        raise app_error(404, "not_found", "Transaction not found")
     tx = existing[0]
 
     patch = {}
@@ -120,7 +121,7 @@ async def list_transactions(
     current_user: dict = Depends(get_current_user)
 ):
     if category and category not in VALID_CATEGORIES:
-        raise HTTPException(status_code=400, detail=f"Invalid category. Must be one of: {', '.join(VALID_CATEGORIES)}")
+        raise app_error(400, "invalid_input", f"Invalid category. Must be one of: {', '.join(VALID_CATEGORIES)}")
 
     user_id = current_user["id"]
     offset = (page - 1) * limit # Pagination

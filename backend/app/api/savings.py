@@ -1,13 +1,14 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from app.api.dependencies import get_current_user
 from app.core.database import supabase
+from app.core.errors import app_error
 
 router = APIRouter(prefix="/savings", tags=["savings"])
 limiter = Limiter(key_func=get_remote_address)
@@ -65,9 +66,9 @@ async def create_goal(
     current_user: dict = Depends(get_current_user),
 ):
     if body.target <= 0:
-        raise HTTPException(status_code=400, detail="Target must be greater than 0")
+        raise app_error(400, "invalid_input", "Target must be greater than 0")
     if body.saved < 0:
-        raise HTTPException(status_code=400, detail="Saved amount cannot be negative")
+        raise app_error(400, "invalid_input", "Saved amount cannot be negative")
 
     result = (
         supabase.table("savings_goals")
@@ -99,9 +100,9 @@ async def update_saved(
         .execute()
     )
     if not existing.data:
-        raise HTTPException(status_code=404, detail="Goal not found")
+        raise app_error(404, "not_found", "Goal not found")
     if body.saved < 0:
-        raise HTTPException(status_code=400, detail="Saved amount cannot be negative")
+        raise app_error(400, "invalid_input", "Saved amount cannot be negative")
 
     result = (
         supabase.table("savings_goals")
@@ -128,7 +129,7 @@ async def delete_goal(
         .execute()
     )
     if not existing.data:
-        raise HTTPException(status_code=404, detail="Goal not found")
+        raise app_error(404, "not_found", "Goal not found")
 
     supabase.table("savings_goals").delete().eq("id", id).eq("user_id", current_user["id"]).execute()
     return {"deleted": id}

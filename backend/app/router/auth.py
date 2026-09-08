@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header
 from app.api.dependencies import get_current_user
 from app.core.database import supabase
+from app.core.errors import app_error
 
 router = APIRouter()
 
@@ -15,4 +16,4 @@ def logout(user = Depends(get_current_user), authorization: str = Header(...)):
         supabase.auth.sign_out(token)
         return {"message": "Logged out successfully"}
     except Exception:
-        raise HTTPException(status_code=401, detail="Logout failed")
+        raise app_error(401, "auth_error", "Logout failed")

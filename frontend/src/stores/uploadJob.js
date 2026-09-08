@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { statementsApi } from '@/services/api'
+import { statementsApi, apiErrorMessage } from '@/services/api'
 import { useToastStore } from './toast'
 
 // Lives in a store (not component state) so an in-flight upload survives
@@ -38,7 +38,7 @@ export const useUploadJobStore = defineStore('uploadJob', () => {
     } catch (e) {
       clearTimeout(t1)
       clearTimeout(t2)
-      errorMsg.value = e.response?.data?.detail ?? e.message
+      errorMsg.value = apiErrorMessage(e)
       phase.value = 'error'
       toast.push(`Statement upload failed — ${errorMsg.value}`, 'error')
     }

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { analyticsApi, budgetApi, healthScoreApi } from '@/services/api'
+import { analyticsApi, budgetApi, healthScoreApi, apiErrorMessage } from '@/services/api'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(false)
@@ -40,7 +40,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       anomalies.value = anoms.data.anomalies
       upcoming.value = upco.data.expenses
     } catch (e) {
-      error.value = e?.response?.data?.detail ?? e.message
+      error.value = apiErrorMessage(e)
     } finally {
       loading.value = false
     }

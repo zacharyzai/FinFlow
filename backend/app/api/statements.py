@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
 from app.core.ai_client import ai_generate
 from app.core.database import supabase
+from app.core.errors import app_error
 from app.core.pagination import fetch_all
 
 router = APIRouter(prefix="/statements", tags=["statements"])
@@ -463,11 +464,11 @@ async def upload_statement(
     is_csv_by_name = filename_lower.endswith(".csv")
     is_pdf_by_name = filename_lower.endswith(".pdf")
     if file.content_type not in ALLOWED_MIME_TYPES and not is_csv_by_name and not is_pdf_by_name:
-        raise HTTPException(status_code=400, detail="Only PDF and CSV files are accepted.")
+        raise app_error(400, "invalid_input", "Only PDF and CSV files are accepted.")
 
     content = await file.read()
     if len(content) > MAX_FILE_BYTES:
-        raise HTTPException(status_code=400, detail="File exceeds 10 MB limit.")
+        raise app_error(400, "invalid_input", "File exceeds 10 MB limit.")
 
     user_id = current_user["id"]
 
@@ -478,31 +479,31 @@ async def upload_statement(
             raw_text = _extract_pdf_text(content)
             content = b""  # discard immediately after extraction
             if not raw_text.strip():
-                raise HTTPException(status_code=422, detail="Could not extract any text from the PDF.")
+                raise app_error(422, "unprocessable_file", "Could not extract any text from the PDF.")
             # Claude does full extraction (date + amounts + category) in one shot for PDFs
             try:
                 rows = _extract_transactions_from_pdf_text(raw_text)
             except Exception as e:
-                raise HTTPException(status_code=502, detail=f"AI extraction failed: {e}")
+                raise app_error(502, "ai_provider_error", f"AI extraction failed: {e}")
         else:
             rows = _parse_csv(content)
             content = b""
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Could not parse file: {e}")
+        raise app_error(422, "unprocessable_file", f"Could not parse file: {e}")
     finally:
         content = b""  # ensure raw bytes are cleared
 
     if not rows:
-        raise HTTPException(status_code=422, detail="No transactions found in the uploaded file.")
+        raise app_error(422, "unprocessable_file", "No transactions found in the uploaded file.")
 
     # --- Categorise with Claude/Gemini (CSV only — PDFs already have categories from extraction) ---
     if not is_pdf:
         try:
             rows = _categorise_with_claude(rows)
         except Exception as e:
-            raise HTTPException(status_code=502, detail=f"AI categorisation failed: {e}")
+            raise app_error(502, "ai_provider_error", f"AI categorisation failed: {e}")
 
     # --- Write to database ---
     try:
@@ -519,7 +520,7 @@ async def upload_statement(
             )
             _insert_ledger_entries(user_id, inserted_txs)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not save transactions: {e}")
+        raise app_error(500, "server_error", f"Could not save transactions: {e}")
 
     return {
         "status": "ok",

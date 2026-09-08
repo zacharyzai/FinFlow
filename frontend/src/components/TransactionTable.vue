@@ -90,6 +90,7 @@ import { ref } from 'vue'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useToastStore } from '@/stores/toast'
 import { CATEGORIES } from '@/constants'
+import { apiErrorMessage } from '@/services/api'
 
 defineProps({
   transactions: {
@@ -132,7 +133,7 @@ async function save(id) {
     })
     editingId.value = null
   } catch (e) {
-    toast.push(e.response?.data?.detail ?? e.message ?? 'Failed to update transaction', 'error')
+    toast.push(apiErrorMessage(e) || 'Failed to update transaction', 'error')
   } finally {
     savingId.value = null
   }

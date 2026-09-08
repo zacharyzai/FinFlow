@@ -1,10 +1,11 @@
 from typing import Optional
 
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.dependencies import get_current_user, limiter
 from app.core.database import supabase
+from app.core.errors import app_error
 from app.core.pagination import fetch_all
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -72,7 +73,7 @@ async def spending_over_time(
     current_user: dict = Depends(get_current_user),
 ):
     if granularity not in ("daily", "weekly", "monthly"):
-        raise HTTPException(status_code=400, detail="granularity must be daily, weekly, or monthly")
+        raise app_error(400, "invalid_input", "granularity must be daily, weekly, or monthly")
 
     user_id = current_user["id"]
 
