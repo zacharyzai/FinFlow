@@ -132,6 +132,7 @@ const NAV = [
   { to: '/goals',        label: 'Savings Goals',   icon: 'savings' },
   { to: '/health',       label: 'Health Score',    icon: 'monitoring' },
   { to: '/upload',       label: 'Statements',      icon: 'description' },
+  { to: '/settings',     label: 'Settings',        icon: 'settings' },
 ]
 
 </script>

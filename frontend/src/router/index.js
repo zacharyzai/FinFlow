@@ -56,6 +56,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/verify-otp',
     name: 'VerifyOtp',
     component: () => import('@/views/VerifyOtpView.vue'),

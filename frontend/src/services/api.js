@@ -53,6 +53,12 @@ export const healthScoreApi = {
   get: () => api.get('/health-score'),
 }
 
+export const telegramApi = {
+  linkUrl: () => api.post('/telegram/link-token'),
+  status: () => api.get('/telegram/status'),
+  disconnect: () => api.delete('/telegram/link'),
+}
+
 export default api
 
 export const transactionApi = {
