@@ -35,10 +35,12 @@ def test_under_recommendation_limit_resets_after_window(monkeypatch):
     assert bot._under_recommendation_limit(chat_id) is True
 
 
-def test_handle_update_ignores_updates_without_a_message():
+def test_handle_update_ignores_updates_without_a_message(monkeypatch):
     called = []
+    monkeypatch.setattr(bot, "handle_start", lambda *a, **k: called.append("handle_start"))
+    monkeypatch.setattr(bot, "handle_command", lambda *a, **k: called.append("handle_command"))
     bot.handle_update({"edited_message": {"chat": {"id": 1}, "text": "/goal"}})
-    assert called == []  # no crash, no dispatch
+    assert called == []  # dispatch was actually skipped, not just no exception
 
 
 def test_handle_update_routes_start_to_handle_start(monkeypatch):

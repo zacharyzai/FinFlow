@@ -156,7 +156,7 @@ def handle_command(chat_id: int, text: str) -> None:
         send_message(chat_id, "Not linked yet — connect your account from FinFlow Settings.")
         return
 
-    command = text.strip().split()[0].lower() if text.strip() else ""
+    command = text.strip().split()[0].split("@")[0].lower() if text.strip() else ""
 
     if command == "/recommendation":
         logger.info("telegram command: /recommendation")
