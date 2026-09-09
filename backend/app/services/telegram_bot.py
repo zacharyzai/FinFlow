@@ -49,6 +49,20 @@ def handle_start(chat_id: int, token: str) -> None:
         return
 
     row = result.data[0]
+
+    # chat_id has a unique index (one Telegram chat -> one FinFlow user). If this
+    # chat is already linked to a *different* row, the update below would hit a
+    # unique-constraint violation and raise — caught by the webhook's generic
+    # except, but silently, leaving the user with no reply. Check first instead.
+    other = supabase.table("telegram_links").select("id").eq("chat_id", chat_id).execute()
+    if other.data and other.data[0]["id"] != row["id"]:
+        send_message(
+            chat_id,
+            "This Telegram account is already linked to a different FinFlow account. "
+            "Disconnect it from that account's Settings first.",
+        )
+        return
+
     supabase.table("telegram_links").update({
         "chat_id": chat_id, "link_token": None, "token_expires_at": None,
     }).eq("id", row["id"]).execute()

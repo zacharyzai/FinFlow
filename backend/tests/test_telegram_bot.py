@@ -97,3 +97,62 @@ def test_handle_command_recommendation_respects_rate_limit(monkeypatch):
     monkeypatch.setattr(bot, "send_message", lambda chat_id, text: sent.append((chat_id, text)))
     bot.handle_command(5, "/recommendation")
     assert sent == [(5, "You've hit the recommendation limit for now — try again in a bit.")]
+
+
+class _FakeQuery:
+    """Minimal stand-in for the supabase-py chainable query builder."""
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    def select(self, *a, **k):
+        return self
+
+    def eq(self, *a, **k):
+        return self
+
+    def update(self, *a, **k):
+        raise AssertionError("update() should not be called when chat_id belongs to another user")
+
+    def execute(self):
+        return type("Result", (), {"data": self._rows})()
+
+
+class _FakeSupabase:
+    """Returns canned rows keyed by table name, ignoring filters."""
+
+    def __init__(self, rows_by_table):
+        self._rows_by_table = rows_by_table
+
+    def table(self, name):
+        return _FakeQuery(self._rows_by_table.get(name, []))
+
+
+def test_handle_start_refuses_to_relink_chat_already_owned_by_another_user(monkeypatch):
+    # token row belongs to "row-b" (the linking user); the same chat_id is
+    # already linked to a different row ("row-a") — both queries hit the same
+    # fake table, so give it a row set that plausibly satisfies each .execute()
+    # in call order via a stateful list instead of a static dict.
+    calls = {"n": 0}
+
+    class SequencedFakeSupabase:
+        def table(self, name):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                # select by link_token -> the row currently being linked
+                return _FakeQuery([{"id": "row-b", "token_expires_at": _future_iso()}])
+            # select by chat_id -> already linked to a different row
+            return _FakeQuery([{"id": "row-a"}])
+
+    monkeypatch.setattr(bot, "supabase", SequencedFakeSupabase())
+    sent = []
+    monkeypatch.setattr(bot, "send_message", lambda chat_id, text: sent.append((chat_id, text)))
+
+    bot.handle_start(chat_id=999, token="tok")
+
+    assert len(sent) == 1
+    assert "already linked to a different FinFlow account" in sent[0][1]
+
+
+def _future_iso():
+    return (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
