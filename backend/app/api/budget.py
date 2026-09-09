@@ -152,18 +152,11 @@ async def delete_expense(
 # Daily budget
 # ----------------------------------------------------------------
 
-@router.get("/daily")
-@limiter.limit("30/minute")
-async def daily_budget(
-    request: Request,
-    current_user: dict = Depends(get_current_user),
-):
+def compute_daily_budget(user_id: str) -> dict:
     today = date.today()
     month_start = today.replace(day=1)
     days_in_month = monthrange(today.year, today.month)[1]
     days_remaining = days_in_month - today.day + 1
-
-    user_id = current_user["id"]
 
     # --- Income: sum of all Income credits this month from transactions ---
     income_result = (
@@ -196,3 +189,12 @@ async def daily_budget(
             "days_remaining": days_remaining,
         }
     }
+
+
+@router.get("/daily")
+@limiter.limit("30/minute")
+async def daily_budget(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    return compute_daily_budget(current_user["id"])
