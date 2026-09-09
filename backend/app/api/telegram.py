@@ -52,9 +52,9 @@ async def webhook(request: Request, x_telegram_bot_api_secret_token: str = Heade
         logger.warning("Rejected Telegram webhook call with invalid secret token")
         return JSONResponse(status_code=200, content={"ok": True})
 
-    update = await request.json()
     try:
+        update = await request.json()
         handle_update(update)
     except Exception:
         logger.exception("Error handling Telegram update")
-    return {"ok": True}
+    return JSONResponse(status_code=200, content={"ok": True})
