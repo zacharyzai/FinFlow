@@ -15,16 +15,7 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 # Category breakdown
 # ----------------------------------------------------------------
 
-@router.get("/categories")
-@limiter.limit("30/minute")
-async def spending_by_category(
-    request: Request,
-    date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    current_user: dict = Depends(get_current_user),
-):
-    user_id = current_user["id"]
-
+def category_breakdown_data(user_id: str, date_from: Optional[str], date_to: Optional[str]) -> dict:
     def make_query():
         q = supabase.table("transactions").select("category, withdrawal").eq("user_id", user_id)
         if date_from:
@@ -56,6 +47,17 @@ async def spending_by_category(
         "categories": breakdown.to_dict(orient="records"),
         "total_spent": round(total_spent, 2),
     }
+
+
+@router.get("/categories")
+@limiter.limit("30/minute")
+async def spending_by_category(
+    request: Request,
+    date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    current_user: dict = Depends(get_current_user),
+):
+    return category_breakdown_data(current_user["id"], date_from, date_to)
 
 
 

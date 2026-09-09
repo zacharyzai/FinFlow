@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from app.api import analytics, budget, statements, transactions
+from app.api import analytics, budget, statements, telegram, transactions
 from app.api import savings, health_score
 from app.api.dependencies import limiter
 from app.core.config import CORS_ORIGINS
@@ -59,6 +59,7 @@ app.include_router(analytics.router)
 app.include_router(budget.router)
 app.include_router(savings.router)
 app.include_router(health_score.router)
+app.include_router(telegram.router)
 
 # Nightly reconciliation at 2AM Singapore time (UTC+8)
 scheduler = BackgroundScheduler(timezone="Asia/Singapore")

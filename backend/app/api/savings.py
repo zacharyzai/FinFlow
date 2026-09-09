@@ -45,17 +45,21 @@ def _enrich_goal(goal: dict) -> dict:
     return goal
 
 
-@router.get("")
-@limiter.limit("30/minute")
-async def list_goals(request: Request, current_user: dict = Depends(get_current_user)):
+def list_goals_data(user_id: str) -> list[dict]:
     result = (
         supabase.table("savings_goals")
         .select("*")
-        .eq("user_id", current_user["id"])
+        .eq("user_id", user_id)
         .order("deadline", desc=False)
         .execute()
     )
-    return {"goals": [_enrich_goal(g) for g in result.data]}
+    return [_enrich_goal(g) for g in result.data]
+
+
+@router.get("")
+@limiter.limit("30/minute")
+async def list_goals(request: Request, current_user: dict = Depends(get_current_user)):
+    return {"goals": list_goals_data(current_user["id"])}
 
 
 @router.post("")

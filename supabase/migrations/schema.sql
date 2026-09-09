@@ -3,6 +3,7 @@
 
 drop view  if exists public.monthly_spending;
 drop table if exists public.reconciliation_log cascade;
+drop table if exists public.telegram_links     cascade;
 drop table if exists public.health_scores      cascade;
 drop table if exists public.savings_goals      cascade;
 drop table if exists public.planned_expenses   cascade;
@@ -191,6 +192,27 @@ create table public.reconciliation_log (
   created_at      timestamptz not null default now()
 );
 
+-- 8. telegram_links
+--    One row per user; chat_id is set once linking completes via /start <token>.
+--    link_token/token_expires_at are only non-null during the brief linking window.
+
+create table public.telegram_links (
+  id               uuid primary key default uuid_generate_v4(),
+  user_id          uuid not null references auth.users(id) on delete cascade,
+  chat_id          bigint,
+  link_token       text,
+  token_expires_at timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+
+create unique index telegram_links_user_id_idx  on public.telegram_links(user_id);
+create unique index telegram_links_chat_id_idx  on public.telegram_links(chat_id) where chat_id is not null;
+
+create trigger telegram_links_updated_at
+  before update on public.telegram_links
+  for each row execute procedure public.set_updated_at();
+
 
 -- Row Level Security
 
@@ -201,6 +223,7 @@ alter table public.planned_expenses   enable row level security;
 alter table public.savings_goals      enable row level security;
 alter table public.health_scores      enable row level security;
 alter table public.reconciliation_log enable row level security;
+alter table public.telegram_links     enable row level security;
 
 create policy "accounts: owner access"
   on public.accounts for all
@@ -235,6 +258,11 @@ create policy "health_scores: owner access"
 create policy "reconciliation_log: no user access"
   on public.reconciliation_log for all
   using (false);
+
+create policy "telegram_links: owner access"
+  on public.telegram_links for all
+  using  (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- Dashboard view: monthly spending by category
 
