@@ -30,6 +30,35 @@
 
           <p v-if="error" class="text-[var(--bad)] text-xs mt-3">{{ error }}</p>
         </div>
+
+        <div class="rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#1a2e2b] p-5 mt-4">
+          <h2 class="text-sm font-semibold text-[var(--text)] mb-1">Quick-Add Token</h2>
+          <p class="text-xs text-[var(--text-3)] mb-4">
+            A long-lived key for an iOS Shortcut to log expenses directly, without opening the app.
+          </p>
+
+          <div v-if="generatedToken" class="mb-3">
+            <p class="text-xs text-[var(--bad)] mb-2">Copy this now — it won't be shown again.</p>
+            <code class="block text-xs bg-[var(--surface-3)] rounded-lg p-3 break-all">{{ generatedToken }}</code>
+          </div>
+
+          <div v-else-if="tokenActive" class="flex items-center justify-between">
+            <span class="text-sm text-[var(--good)] font-medium">Active</span>
+            <button @click="revokeToken" :disabled="tokenBusy"
+                    class="px-4 py-1.5 rounded-full border border-[var(--border)] text-[var(--text-2)] text-sm hover:bg-[var(--surface-3)] disabled:opacity-50 cursor-pointer transition-colors">
+              {{ tokenBusy ? 'Revoking…' : 'Revoke' }}
+            </button>
+          </div>
+
+          <div v-else>
+            <button @click="generateToken" :disabled="tokenBusy"
+                    class="px-4 py-2 rounded-full bg-[var(--brand)] hover:bg-[var(--brand-strong)] text-white text-sm font-semibold disabled:opacity-50 cursor-pointer transition-colors">
+              {{ tokenBusy ? 'Generating…' : 'Generate Quick-Add Token' }}
+            </button>
+          </div>
+
+          <p v-if="tokenError" class="text-[var(--bad)] text-xs mt-3">{{ tokenError }}</p>
+        </div>
       </main>
     </div>
   </div>
@@ -39,7 +68,7 @@
 import { ref, onMounted } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import { telegramApi, apiErrorMessage } from '@/services/api'
+import { telegramApi, apiTokensApi, apiErrorMessage } from '@/services/api'
 
 const loading = ref(true)
 const connected = ref(false)
@@ -89,5 +118,51 @@ async function disconnect() {
   }
 }
 
-onMounted(refreshStatus)
+const tokenActive = ref(false)
+const tokenBusy = ref(false)
+const tokenError = ref('')
+const generatedToken = ref('')
+
+async function refreshTokenStatus() {
+  tokenError.value = ''
+  try {
+    const { data } = await apiTokensApi.status()
+    tokenActive.value = data.active
+  } catch (e) {
+    tokenError.value = apiErrorMessage(e)
+  }
+}
+
+async function generateToken() {
+  tokenBusy.value = true
+  tokenError.value = ''
+  try {
+    const { data } = await apiTokensApi.create()
+    generatedToken.value = data.token
+    tokenActive.value = true
+  } catch (e) {
+    tokenError.value = apiErrorMessage(e)
+  } finally {
+    tokenBusy.value = false
+  }
+}
+
+async function revokeToken() {
+  tokenBusy.value = true
+  tokenError.value = ''
+  try {
+    await apiTokensApi.revoke()
+    tokenActive.value = false
+    generatedToken.value = ''
+  } catch (e) {
+    tokenError.value = apiErrorMessage(e)
+  } finally {
+    tokenBusy.value = false
+  }
+}
+
+onMounted(() => {
+  refreshStatus()
+  refreshTokenStatus()
+})
 </script>

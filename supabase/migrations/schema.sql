@@ -4,6 +4,7 @@
 drop view  if exists public.monthly_spending;
 drop table if exists public.reconciliation_log cascade;
 drop table if exists public.telegram_links     cascade;
+drop table if exists public.api_tokens         cascade;
 drop table if exists public.health_scores      cascade;
 drop table if exists public.savings_goals      cascade;
 drop table if exists public.planned_expenses   cascade;
@@ -213,6 +214,22 @@ create trigger telegram_links_updated_at
   before update on public.telegram_links
   for each row execute procedure public.set_updated_at();
 
+-- 9. api_tokens
+--    One row per user; holds a SHA-256 hash of a long-lived personal access
+--    token used by the iOS Quick-Add Shortcut to authenticate POST /transactions
+--    without a browser-refreshed Supabase JWT. Only one active token per user —
+--    generating a new one deletes the old row first (see app/services/api_tokens.py).
+
+create table public.api_tokens (
+  id            uuid primary key default uuid_generate_v4(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  token_hash    text not null,
+  created_at    timestamptz not null default now(),
+  last_used_at  timestamptz
+);
+
+create unique index api_tokens_user_id_idx on public.api_tokens(user_id);
+
 
 -- Row Level Security
 
@@ -224,6 +241,7 @@ alter table public.savings_goals      enable row level security;
 alter table public.health_scores      enable row level security;
 alter table public.reconciliation_log enable row level security;
 alter table public.telegram_links     enable row level security;
+alter table public.api_tokens         enable row level security;
 
 create policy "accounts: owner access"
   on public.accounts for all
@@ -263,6 +281,14 @@ create policy "telegram_links: owner access"
   on public.telegram_links for all
   using  (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+create policy "api_tokens: owner access"
+  on public.api_tokens for all
+  using  (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+grant select, insert, update, delete on public.api_tokens to authenticated;
+grant select, insert, update, delete on public.api_tokens to service_role;
 
 -- Dashboard view: monthly spending by category
 

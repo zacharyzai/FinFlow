@@ -3,6 +3,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.core.database import supabase
 from app.core.errors import app_error
+from app.services.api_tokens import resolve_token
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -31,4 +32,28 @@ async def get_current_user(authorization: str = Header(...)) -> dict:
 
     if response.user is None:
         raise app_error(401, "auth_error", "Invalid or expired token")
-    return {"id": response.user.id, "email": response.user.email}
+    return {"id": response.user.id, "email": response.user.email, "auth_method": "jwt"}
+
+
+async def get_current_user_via_api_token(x_api_token: str) -> dict:
+    """Resolve a Quick-Add Shortcut personal access token to a user."""
+    user_id = resolve_token(x_api_token)
+    if user_id is None:
+        raise app_error(401, "auth_error", "Invalid or revoked API token")
+    return {"id": user_id, "email": None, "auth_method": "api_token"}
+
+
+async def get_current_user_or_api_token(
+    x_api_token: str = Header(default=""),
+    authorization: str = Header(default=""),
+) -> dict:
+    """
+    Auth for POST /transactions only: accepts either the Quick-Add
+    Shortcut's personal access token (X-API-Token header) or the normal
+    Supabase JWT (Authorization header). Every other endpoint in this
+    app continues to depend on get_current_user directly — this wrapper
+    must not be substituted in anywhere else.
+    """
+    if x_api_token:
+        return await get_current_user_via_api_token(x_api_token)
+    return await get_current_user(authorization)

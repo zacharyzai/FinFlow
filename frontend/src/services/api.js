@@ -59,6 +59,12 @@ export const telegramApi = {
   disconnect: () => api.delete('/telegram/link'),
 }
 
+export const apiTokensApi = {
+  status: () => api.get('/api-tokens/status'),
+  create: () => api.post('/api-tokens'),
+  revoke: () => api.delete('/api-tokens'),
+}
+
 export default api
 
 export const transactionApi = {

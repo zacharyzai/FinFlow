@@ -3,7 +3,7 @@ from typing import Literal, Optional
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
 
-from app.api.dependencies import VALID_CATEGORIES, get_current_user, limiter
+from app.api.dependencies import VALID_CATEGORIES, get_current_user, get_current_user_or_api_token, limiter
 from app.api.statements import _get_or_create_account, _insert_ledger_entries
 from app.core.database import supabase
 from app.core.errors import app_error
@@ -32,8 +32,11 @@ class TransactionUpdate(BaseModel):
 async def create_transaction(
     request: Request,
     body: TransactionIn,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_or_api_token),
 ):
+    if current_user.get("auth_method") == "api_token" and body.type != "withdrawal":
+        raise app_error(403, "invalid_input", "The Quick-Add token can only log withdrawals.")
+
     if body.category not in VALID_CATEGORIES:
         body.category = "Other"
 
