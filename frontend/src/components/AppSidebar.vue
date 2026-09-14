@@ -1,5 +1,8 @@
 <template>
-  <aside class="ff-sidebar" :class="{ 'is-collapsed': !isOpen }">
+  <!-- Backdrop — mobile only, dismisses the drawer on outside tap -->
+  <div v-if="mobileOpen" class="ff-backdrop" @click="mobileOpen = false"></div>
+
+  <aside class="ff-sidebar" :class="{ 'is-collapsed': !isOpen, 'is-mobile-open': mobileOpen }">
 
     <!-- Brand + collapse toggle -->
     <div class="ff-brand-row">
@@ -25,7 +28,7 @@
         v-slot="{ isActive, navigate }"
       >
         <a
-          @click="navigate"
+          @click="navigate(); mobileOpen = false"
           class="ff-nav-link"
           :class="isActive ? 'ff-nav-active' : 'ff-nav-inactive'"
           :title="!isOpen ? item.label : undefined"
@@ -104,7 +107,7 @@ import { useRouter } from 'vue-router'
 import { useSidebar } from '@/composables/useSidebar'
 import FinFlowLogo from '@/components/FinFlowLogo.vue'
 
-const { isOpen } = useSidebar()
+const { isOpen, mobileOpen } = useSidebar()
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const auth = useAuthStore()
@@ -150,7 +153,7 @@ const NAV = [
   border-right: 1px solid var(--border);
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: 18px 14px;
@@ -162,6 +165,44 @@ const NAV = [
 .ff-sidebar.is-collapsed {
   width: 64px;
   padding: 18px 10px;
+}
+
+/* ─── Mobile: off-canvas drawer instead of a permanent rail ─────── */
+/* Below 768px the sidebar takes no layout space at all — it overlays
+   the page and slides in only when opened via AppHeader's menu button. */
+@media (max-width: 767px) {
+  .ff-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 50;
+    width: 248px;
+    padding: 18px 14px;
+    transform: translateX(-100%);
+    transition: transform 280ms var(--ease-drawer);
+  }
+  /* Ignore the desktop collapsed-rail state on mobile — mobile is
+     either fully hidden or fully open, never an icon-only rail. */
+  .ff-sidebar.is-collapsed {
+    width: 248px;
+    padding: 18px 14px;
+  }
+  .ff-sidebar.is-collapsed .ff-fade-text {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .ff-sidebar.is-mobile-open {
+    transform: translateX(0);
+  }
+}
+
+.ff-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+}
+@media (min-width: 768px) {
+  .ff-backdrop { display: none; }
 }
 
 /* ─── Text that fades out on collapse ───────────────── */

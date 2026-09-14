@@ -140,7 +140,7 @@
 
             <div style="display:flex;gap:28px;flex-wrap:wrap">
               <!-- Bar chart + category breakdown -->
-              <div style="flex:2;min-width:340px">
+              <div class="ff-flex-col-2">
                 <div style="position:relative;height:200px;padding-top:18px">
                   <div class="ff-avg-line" :style="`bottom:${avgPct}%`"></div>
                   <div class="ff-avg-label" :style="`bottom:${avgPct}%`">avg {{ fmt(avgSpend) }}</div>
@@ -174,7 +174,7 @@
               </div>
 
               <!-- Anomaly panel -->
-              <div style="flex:1;min-width:280px;border-left:1px solid var(--border);padding-left:28px">
+              <div class="ff-flex-col-1 ff-bordered-col">
                 <div style="display:flex;align-items:center;gap:7px">
                   <span class="material-symbols-outlined" style="font-size:18px;color:var(--bad)">warning</span>
                   <div style="font:600 13px 'IBM Plex Sans';color:var(--text)">Unusual transactions</div>
@@ -210,7 +210,7 @@
 
             <div style="display:flex;gap:28px;flex-wrap:wrap">
               <!-- Calendar grid -->
-              <div style="flex:1;min-width:380px">
+              <div class="ff-flex-col-1 ff-min-w-380">
                 <div class="ff-cal-header">
                   <div v-for="d in ['SUN','MON','TUE','WED','THU','FRI','SAT']" :key="d" class="ff-cal-dow">{{ d }}</div>
                 </div>
@@ -237,7 +237,7 @@
               </div>
 
               <!-- Spendable pool -->
-              <div style="width:280px;flex-shrink:0;border-left:1px solid var(--border);padding-left:28px;display:flex;flex-direction:column">
+              <div class="ff-pool-col" style="display:flex;flex-direction:column">
                 <div style="font:600 12px 'IBM Plex Sans';color:var(--text)">Remaining spendable pool</div>
                 <div style="font:400 11px 'IBM Plex Sans';color:var(--text-3);margin-top:2px;margin-bottom:14px">Cycle resets {{ nextMonthName }}</div>
 
@@ -466,7 +466,7 @@ const nextMonthName = computed(() => {
 <style scoped>
 .ff-app-shell {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
 }
@@ -475,6 +475,9 @@ const nextMonthName = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+@media (max-width: 767px) {
+  .ff-page-content { padding: 16px 14px 32px; }
 }
 
 /* ── Stat strip ── */
@@ -486,6 +489,9 @@ const nextMonthName = computed(() => {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+}
+@media (max-width: 639px) {
+  .ff-stat-strip { grid-template-columns: repeat(2, 1fr); }
 }
 .ff-stat-cell {
   background: var(--surface);
@@ -512,7 +518,10 @@ const nextMonthName = computed(() => {
 /* ── Widget grid ── */
 .ff-widget-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+  /* minmax(min(440px, 100%), 1fr) — same auto-fit behavior on wide screens,
+     but the min() lets a column shrink to fit viewports narrower than
+     440px instead of forcing horizontal overflow (the bug this fixes). */
+  grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr));
   gap: 20px;
   align-items: start;
 }
@@ -657,6 +666,30 @@ const nextMonthName = computed(() => {
   display: inline-block;
 }
 .ff-sigma--warn { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-bd); }
+
+/* Analytics/Calendar responsive columns — desktop keeps the original fixed
+   min-widths (they define the intended two-column layout), but each must
+   shrink to full-width and stack below 768px instead of forcing horizontal
+   overflow on phones. */
+.ff-flex-col-2 { flex: 2; min-width: 340px; }
+.ff-flex-col-1 { flex: 1; min-width: 280px; }
+.ff-min-w-380 { min-width: 380px; }
+.ff-bordered-col { border-left: 1px solid var(--border); padding-left: 28px; }
+.ff-pool-col { width: 280px; flex-shrink: 0; border-left: 1px solid var(--border); padding-left: 28px; }
+
+@media (max-width: 767px) {
+  .ff-flex-col-2, .ff-flex-col-1, .ff-pool-col {
+    min-width: 0;
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .ff-bordered-col, .ff-pool-col {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+}
 
 /* Calendar */
 .ff-cal-header {
