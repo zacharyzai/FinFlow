@@ -69,6 +69,38 @@ def test_create_transaction_via_jwt_still_allows_credit(monkeypatch):
     assert response.json() == {"transaction": tx_row}
 
 
+def test_create_transaction_via_api_token_with_only_amount_and_category(monkeypatch):
+    """The Quick-Add Shortcut only sends amount + category — date should
+    default to today, description to 'Quick add', type to 'withdrawal'."""
+    tx_row = {"id": "tx-defaults", "withdrawal": 4.5, "credit": None, "category": "Food & Dining"}
+    captured = {}
+
+    class _FakeInsertResult:
+        data = [tx_row]
+
+    class _FakeTable:
+        def insert(self, record):
+            captured["record"] = record
+            return self
+
+        def execute(self):
+            return _FakeInsertResult()
+
+    monkeypatch.setattr(transactions.supabase, "table", lambda name: _FakeTable())
+    monkeypatch.setattr(transactions, "_get_or_create_account", lambda user_id, name: "account-1")
+    monkeypatch.setattr(transactions, "_insert_ledger_entries", lambda user_id, txs: None)
+    client = _client_with_auth({"id": "user-1", "email": None, "auth_method": "api_token"})
+
+    response = client.post("/transactions", json={"amount": 4.5, "category": "Food & Dining"})
+
+    assert response.status_code == 200
+    assert captured["record"]["description"] == "Quick add"
+    assert captured["record"]["withdrawal"] == 4.5
+    assert captured["record"]["credit"] is None
+    import datetime
+    assert captured["record"]["date"] == str(datetime.date.today())
+
+
 def _real_client():
     """A TestClient wired to the real transactions router with no auth
     dependency override — requests go through the actual

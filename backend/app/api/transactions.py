@@ -1,3 +1,4 @@
+from datetime import date as date_cls
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -12,10 +13,15 @@ router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
 class TransactionIn(BaseModel):
-    date: str
-    description: str
+    # Optional with defaults so the Quick-Add Shortcut only has to send
+    # amount + category — date/description/type are always the same for
+    # that flow (today, "Quick add", withdrawal), so the Shortcut shouldn't
+    # have to build them itself. The normal app UI still sends all fields
+    # explicitly, so this doesn't change its behavior.
+    date: Optional[str] = None
+    description: str = "Quick add"
     amount: float = Field(gt=0)
-    type: Literal["withdrawal", "credit"]
+    type: Literal["withdrawal", "credit"] = "withdrawal"
     category: str = "Other"
 
 
@@ -36,6 +42,9 @@ async def create_transaction(
 ):
     if current_user.get("auth_method") == "api_token" and body.type != "withdrawal":
         raise app_error(403, "invalid_input", "The Quick-Add token can only log withdrawals.")
+
+    if body.date is None:
+        body.date = str(date_cls.today())
 
     if body.category not in VALID_CATEGORIES:
         body.category = "Other"
