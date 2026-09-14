@@ -1,5 +1,6 @@
-from datetime import date as date_cls
+from datetime import datetime
 from typing import Literal, Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
@@ -44,7 +45,10 @@ async def create_transaction(
         raise app_error(403, "invalid_input", "The Quick-Add token can only log withdrawals.")
 
     if body.date is None:
-        body.date = str(date_cls.today())
+        # Server (Railway) runs in UTC; use Singapore time explicitly so a
+        # quick-add logged late at night SGT doesn't get dated "yesterday"
+        # — same timezone the reconciliation cron already uses (main.py).
+        body.date = str(datetime.now(ZoneInfo("Asia/Singapore")).date())
 
     if body.category not in VALID_CATEGORIES:
         body.category = "Other"

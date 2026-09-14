@@ -97,8 +97,9 @@ def test_create_transaction_via_api_token_with_only_amount_and_category(monkeypa
     assert captured["record"]["description"] == "Quick add"
     assert captured["record"]["withdrawal"] == 4.5
     assert captured["record"]["credit"] is None
-    import datetime
-    assert captured["record"]["date"] == str(datetime.date.today())
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    assert captured["record"]["date"] == str(datetime.now(ZoneInfo("Asia/Singapore")).date())
 
 
 def _real_client():
