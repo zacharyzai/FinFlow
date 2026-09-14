@@ -4,7 +4,16 @@
     <div class="flex-1 flex flex-col min-w-0">
       <AppHeader title="Transactions" />
       <main class="flex-1 p-6">
-        <div class="flex justify-end mb-4">
+        <div class="flex justify-between items-center mb-4">
+          <select
+            v-model="selectedCategory"
+            class="px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10
+                   bg-white dark:bg-[#1a2e2b] text-sm text-slate-700 dark:text-slate-200
+                   cursor-pointer"
+          >
+            <option value="">All categories</option>
+            <option v-for="c in CATEGORIES" :key="c" :value="c">{{ c }}</option>
+          </select>
           <button @click="showAdd = true"
                   class="px-4 py-2 rounded-full bg-[var(--brand)] hover:bg-[var(--brand-strong)]
                          text-[var(--on-brand)] text-sm font-semibold cursor-pointer
@@ -36,7 +45,7 @@
         </div>
 
         <p v-else-if="store.error" class="text-red-400 text-sm">{{ store.error }}</p>
-        <TransactionTable v-else :transactions="store.transactions" />
+        <TransactionTable v-else :transactions="filteredTransactions" />
 
         <AddTransactionModal :open="showAdd" @close="showAdd = false" />
       </main>
@@ -45,14 +54,23 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import TransactionTable from '@/components/TransactionTable.vue'
 import AddTransactionModal from '@/components/AddTransactionModal.vue'
 import { useTransactionsStore } from '@/stores/transactions'
+import { CATEGORIES } from '@/constants'
 
 const store = useTransactionsStore()
 const showAdd = ref(false)
+const selectedCategory = ref('')
+
+const filteredTransactions = computed(() =>
+  selectedCategory.value
+    ? store.transactions.filter(tx => tx.category === selectedCategory.value)
+    : store.transactions
+)
+
 onMounted(() => store.fetch())
 </script>
