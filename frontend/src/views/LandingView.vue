@@ -7,7 +7,7 @@
      <span class="navbar__brand">
       <FinFlowLogo />
     </span>
-         <router-link class="navbar__cta" to="/login">Sign In/Login</router-link>
+         <router-link class="navbar__cta" to="/login">Log In</router-link>
     </nav>
 
     <main>
@@ -56,7 +56,21 @@ gsap.registerPlugin(ScrollTrigger)
 
 const isLoading = ref(true)
 
-const galleryImages = Array.from({ length: 11 }, (_, i) => ({ src: `/images/${i + 1}.svg`, alt: `Image ${i + 1}` }))
+// Labels match the text baked into each tile's graphic — real alt text for
+// screen readers, not the decorative filler these used to have.
+const galleryImages = [
+  { src: '/images/1.svg', alt: 'Insights' },
+  { src: '/images/2.svg', alt: 'Goals' },
+  { src: '/images/3.svg', alt: 'Spending breakdown' },
+  { src: '/images/4.svg', alt: 'Bank accounts' },
+  { src: '/images/5.svg', alt: 'Savings' },
+  { src: '/images/6.svg', alt: 'AI-powered parsing' },
+  { src: '/images/7.svg', alt: 'Health score' },
+  { src: '/images/8.svg', alt: 'Budget calendar' },
+  { src: '/images/9.svg', alt: 'Statement upload' },
+  { src: '/images/10.svg', alt: 'Spending trends' },
+  { src: '/images/11.png', alt: 'Smart categorisation' }, // was requesting 11.svg, which doesn't exist — always broken
+]
 const navbar = ref(null)
 const blockMain = ref(null)
 const blockWrapper = ref(null)
@@ -264,7 +278,13 @@ onMounted(() => {
     // 425vh scroll runway — neither translates to phone screens. Below
     // 768px, skip it entirely and let the CSS media query show a plain
     // stacked layout instead of a broken/janky shrunk version of it.
-    if (window.matchMedia('(max-width: 767px)').matches) return
+    // Same skip for prefers-reduced-motion, at any screen width — this is
+    // a full GSAP scroll-hijack with zoom/parallax, exactly what that
+    // setting exists to opt out of.
+    if (
+      window.matchMedia('(max-width: 767px)').matches ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) return
     initSmoothScrolling()
     init()
   })
@@ -286,7 +306,11 @@ onUnmounted(() => {
 
 <style scoped>
 .landing {
-  --font-primary: 'Inter', Arial, sans-serif;
+  /* 'Inter' and 'Urbanist' were never actually loaded anywhere in this app
+     (only IBM Plex Sans/Mono are, via index.html) — every browser was
+     silently falling back to a generic system sans the whole time.
+     Using the app's real font here instead, matching everywhere else. */
+  --font-primary: 'IBM Plex Sans', Arial, sans-serif;
   --font-secondary: 'Georgia', Times, serif;
   --color-text: var(--text);
   --color-bg: #EBE7D6;;
@@ -315,7 +339,7 @@ onUnmounted(() => {
 }
 
 .navbar__brand {
-  font-family: 'Urbanist', var(--font-secondary);
+  font-family: var(--font-primary);
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -325,7 +349,7 @@ onUnmounted(() => {
 
 .navbar__cta {
   flex-shrink: 0;
-  font-family: 'Urbanist', var(--font-primary);
+  font-family: var(--font-primary);
   font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -488,7 +512,7 @@ ul {
   align-items: center;
   justify-content: center;
   padding: 12px 32px;
-  font-family: 'Urbanist', var(--font-primary);
+  font-family: var(--font-primary);
   font-size: 0.875rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -550,8 +574,12 @@ ul {
   object-fit: cover;
 }
 
-/* ---------- Mobile: static stacked layout, no scroll-hijack ---------- */
-@media (max-width: 767px) {
+/* ---------- Static stacked layout, no scroll-hijack ----------
+   Applies below 768px (scroll-hijack doesn't translate to phones) OR
+   whenever the user has prefers-reduced-motion set, at any screen size —
+   the JS above skips initSmoothScrolling()/init() under the same two
+   conditions, so this just needs to match the resulting static markup. */
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
   .media { height: 100dvh; }
   .block--main { height: auto; }
   .block__wrapper { position: static; padding: 60px 20px; }

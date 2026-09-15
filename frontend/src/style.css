@@ -53,8 +53,8 @@
   --border-strong: #42685D;
   --text: #EBE7D6;
   --text-2: #B6C2B8;
-  --text-3: #849A8F;
-  --brand: #7C9E8C;
+  --text-3: #97AAA0; /* lightened from #849A8F: was 3.79:1 on --bg, below WCAG AA 4.5:1 for text */
+  --brand: #90AD9E; /* lightened from #7C9E8C: was 3.86:1 on --bg, below WCAG AA 4.5:1 for text */
   --brand-strong: #9CBBA8;
   --on-brand: #12302B;
   --sage: #7C9E8C;
