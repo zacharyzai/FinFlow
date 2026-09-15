@@ -248,6 +248,14 @@ create policy "accounts: owner access"
   using  (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+-- Account renaming (Settings sidebar) writes directly from the browser via
+-- Supabase, unlike every other table's writes which go through the FastAPI
+-- backend's service-role key (which bypasses grants entirely). This is the
+-- one client-side write path accounts has, so it's the one table that
+-- actually needs an explicit grant — confirmed missing 2026-09-15 ("failed
+-- to rename account").
+grant update on public.accounts to authenticated;
+
 create policy "transactions: owner access"
   on public.transactions for all
   using  (auth.uid() = user_id)

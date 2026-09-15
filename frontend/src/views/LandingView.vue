@@ -260,6 +260,11 @@ onMounted(() => {
     imagesLoaded(document.querySelectorAll('img'), { background: true }, resolve)
   }).then(() => {
     isLoading.value = false
+    // The scroll-hijack sequence assumes a 3-column desktop grid and a
+    // 425vh scroll runway — neither translates to phone screens. Below
+    // 768px, skip it entirely and let the CSS media query show a plain
+    // stacked layout instead of a broken/janky shrunk version of it.
+    if (window.matchMedia('(max-width: 767px)').matches) return
     initSmoothScrolling()
     init()
   })
@@ -283,7 +288,7 @@ onUnmounted(() => {
 .landing {
   --font-primary: 'Inter', Arial, sans-serif;
   --font-secondary: 'Georgia', Times, serif;
-  --color-text: var(--color-text);
+  --color-text: var(--text);
   --color-bg: #EBE7D6;;
   --color-accent: #1a1a2e;
   --color-btn-fill: #1a1a2e;
@@ -543,5 +548,15 @@ ul {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ---------- Mobile: static stacked layout, no scroll-hijack ---------- */
+@media (max-width: 767px) {
+  .media { height: 100dvh; }
+  .block--main { height: auto; }
+  .block__wrapper { position: static; padding: 60px 20px; }
+  .content { height: auto; padding: 20px 0 40px; }
+  .gallery { position: static; transform: none; width: 100%; margin-top: 24px; }
+  .gallery__grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
