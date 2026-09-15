@@ -43,5 +43,19 @@ export const useAccountsStore = defineStore('accounts', () => {
     })
   }
 
-  return { accounts, loading, error, fetch }
+  async function rename(id, name) {
+    const auth = useAuthStore()
+    const { error: err } = await supabase
+      .from('accounts')
+      .update({ name })
+      .eq('id', id)
+      .eq('user_id', auth.user.id)
+
+    if (err) throw err
+
+    const acc = accounts.value.find(a => a.id === id)
+    if (acc) acc.name = name
+  }
+
+  return { accounts, loading, error, fetch, rename }
 })

@@ -51,8 +51,28 @@
         :title="!isOpen ? `${acc.name} · ${formatBalance(acc.balance)}` : undefined"
       >
         <span class="ff-account-dot" :style="`background:${acc.color}`"></span>
-        <span class="ff-fade-text ff-account-name">{{ acc.name }}</span>
+
+        <input
+          v-if="editingAccountId === acc.id"
+          v-model="editName"
+          ref="editInput"
+          class="ff-fade-text ff-account-name-input"
+          @keydown.enter="saveRename(acc.id)"
+          @keydown.escape="editingAccountId = null"
+          @blur="saveRename(acc.id)"
+        />
+        <span v-else class="ff-fade-text ff-account-name">{{ acc.name }}</span>
+
         <span class="ff-fade-text ff-account-balance">{{ formatBalance(acc.balance) }}</span>
+
+        <button
+          v-if="editingAccountId !== acc.id"
+          class="ff-fade-text ff-account-edit-btn"
+          title="Rename account"
+          @click="startRename(acc)"
+        >
+          <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+        </button>
       </div>
       <div v-if="!accountsStore.loading && accountsStore.accounts.length === 0" class="ff-fade-text ff-account-empty">
         No accounts yet
@@ -99,15 +119,40 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountsStore } from '@/stores/accounts'
+import { useToastStore } from '@/stores/toast'
 import { useRouter } from 'vue-router'
 import { useSidebar } from '@/composables/useSidebar'
 import FinFlowLogo from '@/components/FinFlowLogo.vue'
 
 const { isOpen, mobileOpen } = useSidebar()
+const toast = useToastStore()
+
+const editingAccountId = ref(null)
+const editName = ref('')
+const editInput = ref(null)
+
+function startRename(acc) {
+  editingAccountId.value = acc.id
+  editName.value = acc.name
+  nextTick(() => editInput.value?.[0]?.focus?.() ?? editInput.value?.focus?.())
+}
+
+async function saveRename(id) {
+  if (editingAccountId.value !== id) return // already saved/cancelled (blur firing after Enter)
+  const name = editName.value.trim()
+  editingAccountId.value = null
+  if (!name) return
+
+  try {
+    await accountsStore.rename(id, name)
+  } catch (e) {
+    toast.push('Failed to rename account', 'error')
+  }
+}
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 const auth = useAuthStore()
@@ -376,11 +421,37 @@ const NAV = [
   border-radius: 2px;
   flex-shrink: 0;
 }
-.ff-account-name { flex: 1; }
+.ff-account-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-account-name-input {
+  flex: 1;
+  min-width: 0;
+  font: 500 13px 'IBM Plex Sans';
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--brand);
+  border-radius: 5px;
+  padding: 1px 5px;
+  outline: none;
+}
 .ff-account-balance {
   font: 500 11px 'IBM Plex Mono';
   color: var(--text-3);
 }
+.ff-account-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+  cursor: pointer;
+}
+.ff-account-item:hover .ff-account-edit-btn { opacity: 1; }
+.ff-account-edit-btn:hover { color: var(--text); background: var(--surface-3); }
 .ff-account-empty {
   padding: 8px 11px;
   font: 400 12px 'IBM Plex Sans';

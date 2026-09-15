@@ -68,10 +68,16 @@
               {{ tx.credit ? tx.credit.toFixed(2) : '—' }}
             </td>
             <td class="px-4 py-3">
-              <button title="Edit" @click="startEdit(tx)"
-                      class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer">
-                <span class="material-symbols-outlined" style="font-size:16px">edit</span>
-              </button>
+              <div class="flex items-center gap-1 justify-end">
+                <button title="Edit" @click="startEdit(tx)"
+                        class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer">
+                  <span class="material-symbols-outlined" style="font-size:16px">edit</span>
+                </button>
+                <button title="Delete" :disabled="deletingId === tx.id" @click="remove(tx)"
+                        class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer disabled:opacity-50">
+                  <span class="material-symbols-outlined" style="font-size:16px">delete</span>
+                </button>
+              </div>
             </td>
           </template>
         </tr>
@@ -104,6 +110,7 @@ const toast = useToastStore()
 
 const editingId = ref(null)
 const savingId = ref(null)
+const deletingId = ref(null)
 const draft = ref({ date: '', description: '', category: '', type: 'withdrawal', amount: '' })
 
 function startEdit(tx) {
@@ -136,6 +143,19 @@ async function save(id) {
     toast.push(apiErrorMessage(e) || 'Failed to update transaction', 'error')
   } finally {
     savingId.value = null
+  }
+}
+
+async function remove(tx) {
+  if (!confirm(`Delete "${tx.description}"? This can't be undone.`)) return
+
+  deletingId.value = tx.id
+  try {
+    await store.remove(tx.id)
+  } catch (e) {
+    toast.push(apiErrorMessage(e) || 'Failed to delete transaction', 'error')
+  } finally {
+    deletingId.value = null
   }
 }
 </script>

@@ -63,5 +63,10 @@ export const useTransactionsStore = defineStore('transactions', () => {
     await fetch()
   }
 
-  return { transactions, loading, error, byCategory, totalSpend, totalIncome, fetch, add, update }
+  async function remove(id) {
+    await transactionApi.delete(id)
+    await fetch()
+  }
+
+  return { transactions, loading, error, byCategory, totalSpend, totalIncome, fetch, add, update, remove }
 })

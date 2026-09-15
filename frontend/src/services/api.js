@@ -74,6 +74,9 @@ export const transactionApi = {
   update(id, data) {
     return api.patch(`/transactions/${id}`, data)
   },
+  delete(id) {
+    return api.delete(`/transactions/${id}`)
+  },
 }
 
 // Backend errors carry a `code` alongside the message (see app_error() in

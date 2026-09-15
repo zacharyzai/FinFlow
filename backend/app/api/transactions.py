@@ -124,6 +124,29 @@ async def update_transaction(
     return {"transaction": updated_tx}
 
 
+@router.delete('/{transaction_id}')
+@limiter.limit("30/minute")
+async def delete_transaction(
+    request: Request,
+    transaction_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    existing = (
+        supabase.table("transactions").select("id")
+        .eq("id", transaction_id).eq("user_id", user_id).limit(1).execute().data
+    )
+    if not existing:
+        raise app_error(404, "not_found", "Transaction not found")
+
+    # Ledger entries reference the transaction via a foreign key — delete
+    # them first so the transaction row can be removed cleanly.
+    supabase.table("ledger_entries").delete().eq("transaction_id", transaction_id).eq("user_id", user_id).execute()
+    supabase.table("transactions").delete().eq("id", transaction_id).eq("user_id", user_id).execute()
+
+    return {"deleted": True}
+
+
 #Transactions List
 @router.get('')
 @limiter.limit("30/minute")
