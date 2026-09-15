@@ -5,7 +5,7 @@
           Check your email
         </h1>
         <p class="text-center text-sm text-zinc-400 dark:text-zinc-500 mb-2">
-          We sent an 8-digit code to
+          We sent a 6-digit code to
         </p>
         <p class="text-center text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-8">
           {{ email }}
@@ -70,7 +70,7 @@ const auth = useAuthStore()
 const router = useRouter()
 
 const email = history.state.email
-const digits = ref(['', '', '', '', '', '', '', ''])
+const digits = ref(['', '', '', '', '', ''])
 const inputs = ref([])
 const loading = ref(false)
 const errorMsg = ref('')
@@ -90,7 +90,7 @@ function onInput(i) {
   // Strip anything that isn't a digit
   digits.value[i] = digits.value[i].replace(/\D/g, '').slice(0, 1)
 
-  if (digits.value[i] && i < 7) {
+  if (digits.value[i] && i < 5) {
     inputs.value[i + 1].focus()
   }
 
@@ -107,15 +107,15 @@ function onKeydown(e, i) {
 
 function onPaste(e) {
   e.preventDefault()
-  const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 8)
+  const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
   pasted.split('').forEach((char, i) => {
     digits.value[i] = char
   })
   // Focus the box after the last pasted digit
-  const next = Math.min(pasted.length, 7)
+  const next = Math.min(pasted.length, 5)
   inputs.value[next].focus()
 
-  if (pasted.length === 8 && !loading.value) submit()
+  if (pasted.length === 6 && !loading.value) submit()
 }
 
 async function submit() {
@@ -126,7 +126,7 @@ async function submit() {
     router.push({ name: 'ResetPassword' })
   } catch (e) {
     errorMsg.value = 'Invalid or expired code. Please try again.'
-    digits.value = Array(8).fill('')
+    digits.value = Array(6).fill('')
     inputs.value[0].focus()
   } finally {
     loading.value = false
