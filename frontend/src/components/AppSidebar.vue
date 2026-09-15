@@ -9,7 +9,7 @@
       <FinFlowLogo size="md" :wordmark="isOpen" />
       <button
         class="ff-toggle-btn"
-        @click="isOpen = !isOpen"
+        @click="isOpen = !isOpen; mobileOpen = false"
         :aria-label="isOpen ? 'Collapse sidebar' : 'Expand sidebar'"
         :title="isOpen ? 'Collapse' : 'Expand'"
       >
