@@ -18,6 +18,9 @@ jobs:
         working-directory: backend
       - run: python -m pytest -q
         working-directory: backend
+        env:
+          SUPABASE_URL: "https://ci-placeholder.supabase.co"
+          SUPABASE_SERVICE_ROLE_KEY: "ci-placeholder-key"
 
   frontend:
     runs-on: ubuntu-latest
