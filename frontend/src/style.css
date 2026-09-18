@@ -102,7 +102,7 @@ button:not(:disabled):active {
 }
 
 /* Base font */
-body { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 
 /* Route page transitions — 150ms enter, 100ms exit (Emil: exit faster than enter) */
 .page-enter-active { transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out); }
