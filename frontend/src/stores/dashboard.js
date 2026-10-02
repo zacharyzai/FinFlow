@@ -2,6 +2,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { analyticsApi, budgetApi, healthScoreApi, apiErrorMessage } from '@/services/api'
 
+const pad = n => String(n).padStart(2, '0')
+const todayStr = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(false)
   const error = ref(null)
@@ -12,15 +18,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const monthlyTrend = ref([])                      // /analytics/spending-over-time
   const anomalies = ref([])                         // /analytics/anomalies
   const upcoming = ref([])                          // /budget/upcoming
+  const selectedMonth = ref(null)                  // 'YYYY-MM' being viewed in the category breakdown; null = current month
   const healthScore = ref(null)                     // /health-score (slow: calls Claude)
 
   async function load() {
     loading.value = true
     error.value = null
+    selectedMonth.value = null
 
     const now = new Date()
-    const pad = n => String(n).padStart(2, '0')
-    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    const today = todayStr()
     const monthStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
     // 6-month window for bar chart
     const trendStart = new Date(now.getFullYear(), now.getMonth() - 5, 1)
@@ -52,5 +59,21 @@ export const useDashboardStore = defineStore('dashboard', () => {
       .catch(() => {})
   }
 
-  return { loading, error, budget, categories, monthlyTrend, anomalies, upcoming, healthScore, load }
+  // Re-fetch the category breakdown for a past month. monthEnd = a trend data_point's date (last day of month).
+  async function selectMonth(monthEnd) {
+    const ym = monthEnd.slice(0, 7)
+    const today = todayStr()
+    selectedMonth.value = ym
+    try {
+      const res = await analyticsApi.categories({
+        date_from: `${ym}-01`,
+        date_to: monthEnd < today ? monthEnd : today,
+      })
+      if (selectedMonth.value === ym) categories.value = res.data // ignore stale response if user clicked another bar
+    } catch (e) {
+      error.value = apiErrorMessage(e)
+    }
+  }
+
+  return { selectedMonth, selectMonth, loading, error, budget, categories, monthlyTrend, anomalies, upcoming, healthScore, load }
 })

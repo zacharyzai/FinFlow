@@ -145,10 +145,12 @@
                   <div class="ff-avg-line" :style="`bottom:${avgPct}%`"></div>
                   <div class="ff-avg-label" :style="`bottom:${avgPct}%`">avg {{ fmt(avgSpend) }}</div>
                   <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;height:100%">
-                    <div v-for="bar in chartBars" :key="bar.month" class="ff-bar-col">
+                    <div v-for="bar in chartBars" :key="bar.key" class="ff-bar-col" :class="bar.selected ? 'ff-bar-col--selected' : ''"
+                         role="button" tabindex="0" :aria-pressed="bar.selected" :aria-label="`Show ${bar.month} spending by category`"
+                         @click="store.selectMonth(bar.key)" @keydown.enter="store.selectMonth(bar.key)" @keydown.space.prevent="store.selectMonth(bar.key)">
                       <span class="ff-bar-val" :class="bar.current ? 'ff-bar-val--active' : ''">{{ bar.val }}</span>
                       <div class="ff-bar" :class="bar.current ? 'ff-bar--current' : ''" :style="`height:${bar.pct}%`"></div>
-                      <span class="ff-bar-month" :class="bar.current ? 'ff-bar-month--active' : ''">{{ bar.month }}</span>
+                      <span class="ff-bar-month" :class="bar.selected ? 'ff-bar-month--active' : ''">{{ bar.month }}</span>
                     </div>
                   </div>
                 </div>
@@ -157,7 +159,7 @@
                 <!-- Category breakdown -->
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
                   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
-                    <div style="font:600 12px 'IBM Plex Sans';color:var(--text)">{{ currentMonthName }} spending by category</div>
+                    <div style="font:600 12px 'IBM Plex Sans';color:var(--text)">{{ selectedMonthName }} spending by category</div>
                     <div style="font:600 12px 'IBM Plex Mono';color:var(--text-2)">{{ fmt(totalSpent) }}</div>
                   </div>
                   <div class="ff-category-bar">
@@ -369,7 +371,8 @@ const chartBars = computed(() => {
     const isCurrent = +yr === now.getFullYear() && +mo - 1 === now.getMonth()
     const month = new Date(+yr, +mo - 1, 1).toLocaleString('en', { month: 'short' })
     const val = Math.round(p.total).toLocaleString('en')
-    return { month, val: isCurrent ? `${val}*` : val, pct: Math.round(p.total / maxVal * 100), current: isCurrent }
+    const selected = store.selectedMonth ? p.date.startsWith(store.selectedMonth) : isCurrent
+    return { key: p.date, month, val: isCurrent ? `${val}*` : val, pct: Math.round(p.total / maxVal * 100), current: isCurrent, selected }
   })
 })
 
@@ -393,6 +396,13 @@ const categories = computed(() =>
     color: STK_COLORS[i % STK_COLORS.length],
   }))
 )
+
+// Heading for the category breakdown: follows the clicked bar, defaults to the current month
+const selectedMonthName = computed(() => {
+  if (!store.selectedMonth) return currentMonthName.value
+  const [yr, mo] = store.selectedMonth.split('-')
+  return `${MONTHS[+mo - 1]} ${yr}`
+})
 
 const totalSpent = computed(() => store.categories.total_spent ?? 0)
 
@@ -623,6 +633,7 @@ const nextMonthName = computed(() => {
   padding: 0 4px;
 }
 .ff-bar-col {
+  cursor: pointer;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -631,6 +642,8 @@ const nextMonthName = computed(() => {
   height: 100%;
   gap: 6px;
 }
+.ff-bar-col--selected .ff-bar { outline: 2px solid var(--brand); outline-offset: 1px; }
+.ff-bar-col:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
 .ff-bar-val {
   font: 500 10px 'IBM Plex Mono';
   color: var(--text-3);
