@@ -22,11 +22,13 @@
           readonly
         />
       </div>
-      <!-- Month filter — label hidden below 480px, icon-only button remains -->
-      <button class="ff-btn-ghost">
+      <!-- Month picker — dashboard only. Native <select> = keyboard + screen-reader support for free -->
+      <label v-if="monthPicker" class="ff-btn-ghost ff-month-picker">
         <span class="material-symbols-outlined" style="font-size:18px;line-height:1">calendar_today</span>
-        <span class="ff-btn-label">{{ currentMonth }}</span>
-      </button>
+        <select :value="dashboard.selectedMonth ?? monthOptions[0].value" aria-label="Review month" @change="dashboard.selectMonth($event.target.value)">
+          <option v-for="o in monthOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        </select>
+      </label>
       <!-- Upload CTA — label hidden below 480px, icon-only button remains -->
       <router-link to="/upload" class="ff-btn-primary">
         <span class="material-symbols-outlined" style="font-size:18px;line-height:1">upload_file</span>
@@ -38,17 +40,31 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useDashboardStore } from '@/stores/dashboard'
 import { usePalette } from '@/composables/usePalette'
 import { useSidebar } from '@/composables/useSidebar'
 
-defineProps({ title: { type: String, default: 'Dashboard' } })
+defineProps({
+  title: { type: String, default: 'Dashboard' },
+  monthPicker: { type: Boolean, default: false },
+})
 
 const { open: paletteOpen } = usePalette()
 const { mobileOpen } = useSidebar()
 
-const currentMonth = computed(() =>
-  new Date().toLocaleString('en-SG', { month: 'long' })
-)
+const dashboard = useDashboardStore()
+
+// Current month + the 5 before it — same 6-month window the dashboard trend chart loads
+const monthOptions = computed(() => {
+  const now = new Date()
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    return {
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleString('en-SG', { month: 'long', year: 'numeric' }),
+    }
+  })
+})
 </script>
 
 <style scoped>
@@ -149,6 +165,17 @@ const currentMonth = computed(() =>
   font: 500 13px 'IBM Plex Sans';
   cursor: pointer;
 }
+.ff-month-picker { padding: 0 6px 0 11px; }
+.ff-month-picker select {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 8px 4px;
+  cursor: pointer;
+  outline: none;
+}
+.ff-month-picker:focus-within { border-color: var(--brand); }
 .ff-btn-ghost:hover { background: var(--surface-3); color: var(--text); }
 .ff-btn-primary {
   display: flex;

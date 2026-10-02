@@ -2,9 +2,10 @@ import json
 import logging
 from calendar import monthrange
 from datetime import date
+from typing import Optional
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -160,18 +161,26 @@ def _ai_tip(weakest: str, detail: dict) -> str:
 
 @router.get("")
 @limiter.limit("10/minute")
-async def get_health_score(request: Request, current_user: dict = Depends(get_current_user)):
+async def get_health_score(
+    request: Request,
+    month: Optional[str] = Query(None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$", description="Score this month (YYYY-MM) instead of the latest one"),
+    current_user: dict = Depends(get_current_user),
+):
     user_id = current_user["id"]
     real_today = date.today()
 
     # Score the most recent month that actually has transactions, not necessarily the
     # current calendar month — bank statements are usually for a just-closed month, so
     # scoring strictly "this month" would show empty-data fallback values right after upload.
-    latest = (
-        supabase.table("transactions").select("date")
-        .eq("user_id", user_id).order("date", desc=True).limit(1).execute().data
-    )
-    ref = date.fromisoformat(latest[0]["date"]) if latest else real_today
+    # An explicit `month` (past-month review on the dashboard) overrides that.
+    if month:
+        ref = date.fromisoformat(f"{month}-01")
+    else:
+        latest = (
+            supabase.table("transactions").select("date")
+            .eq("user_id", user_id).order("date", desc=True).limit(1).execute().data
+        )
+        ref = date.fromisoformat(latest[0]["date"]) if latest else real_today
 
     days_in_month = monthrange(ref.year, ref.month)[1]
     month_start = str(ref.replace(day=1))
@@ -199,6 +208,7 @@ async def get_health_score(request: Request, current_user: dict = Depends(get_cu
         "score": total,
         "dimensions": dimensions,
         "weakest_dimension": weakest,
-        "ai_tip": _ai_tip(weakest, dimensions[weakest]["detail"]),
+        # Past months are fixed history — skip the paid Claude call, the numeric score is enough
+        "ai_tip": None if month and not is_current_month else _ai_tip(weakest, dimensions[weakest]["detail"]),
         "month": ref.strftime("%B %Y"),
     }

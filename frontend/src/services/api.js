@@ -50,7 +50,7 @@ export const savingsApi = {
 }
 
 export const healthScoreApi = {
-  get: () => api.get('/health-score'),
+  get: (month) => api.get('/health-score', { params: month ? { month } : {} }),
 }
 
 export const telegramApi = {

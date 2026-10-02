@@ -2,9 +2,15 @@
   <div class="ff-app-shell">
     <AppSidebar />
     <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-      <AppHeader title="Dashboard" />
+      <AppHeader title="Dashboard" month-picker />
 
       <div class="ff-page-content">
+
+        <!-- ── Past-month banner ── -->
+        <div v-if="store.isPastMonth" class="ff-past-banner" role="status">
+          <span>Reviewing <strong>{{ selectedMonthName }}</strong> — budget and upcoming bills only apply to the current month.</span>
+          <button @click="store.selectMonth(null)">Back to current month</button>
+        </div>
 
         <!-- ── Stat strip ── -->
         <div class="ff-stat-strip">
@@ -13,11 +19,16 @@
             <div class="ff-stat-value">{{ fmt(income) }}</div>
           </div>
           <div class="ff-stat-cell">
-            <div class="ff-stat-label">Spent this cycle</div>
+            <div class="ff-stat-label">{{ store.isPastMonth ? 'Spent' : 'Spent this cycle' }}</div>
             <div class="ff-stat-value">{{ fmt(spentThisCycle) }}</div>
-            <div class="ff-stat-meta">{{ spentPct }}% of income · {{ daysElapsed }} days</div>
+            <div class="ff-stat-meta">{{ spentPct }}% of income<template v-if="!store.isPastMonth"> · {{ daysElapsed }} days</template></div>
           </div>
-          <div class="ff-stat-cell">
+          <div v-if="store.isPastMonth" class="ff-stat-cell">
+            <div class="ff-stat-label">Net saved</div>
+            <div class="ff-stat-value" :style="`color:${netSaved >= 0 ? 'var(--good)' : 'var(--bad)'}`">{{ store.healthScore ? fmt(netSaved) : '…' }}</div>
+            <div class="ff-stat-meta">income − spent</div>
+          </div>
+          <div v-else class="ff-stat-cell">
             <div class="ff-stat-label">Safe daily budget</div>
             <div class="ff-stat-value" style="color:var(--good)">{{ fmt(dailyBudget) }}</div>
             <div class="ff-stat-meta">{{ daysRemaining }} days remaining</div>
@@ -201,7 +212,7 @@
           </section>
 
           <!-- Widget 4: Budget Calendar (full width) -->
-          <section class="ff-widget ff-widget--full">
+          <section v-if="!store.isPastMonth" class="ff-widget ff-widget--full">
             <div class="ff-widget-head">
               <div style="display:flex;align-items:center;gap:9px">
                 <span class="material-symbols-outlined" style="font-size:20px;color:var(--text)">event</span>
@@ -324,7 +335,11 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const STK_COLORS = ['var(--stk1)','var(--stk2)','var(--stk3)','var(--stk4)','var(--stk5)','var(--stk6)','var(--stk7)']
 
 // ── Stat strip ────────────────────────────────────────────────
-const income = computed(() => store.budget?.breakdown.income ?? 0)
+// Past months: income comes from the health score's savings-rate detail (same month, same Income-category sum as the daily budget)
+const income = computed(() => store.isPastMonth
+  ? store.healthScore?.dimensions.savings_rate.detail.income ?? 0
+  : store.budget?.breakdown.income ?? 0)
+const netSaved = computed(() => income.value - spentThisCycle.value)
 const spentThisCycle = computed(() => store.categories.total_spent ?? 0)
 const dailyBudget = computed(() => store.budget?.daily_budget ?? 0)
 const daysRemaining = computed(() => store.budget?.breakdown.days_remaining ?? 0)
@@ -372,7 +387,7 @@ const chartBars = computed(() => {
     const month = new Date(+yr, +mo - 1, 1).toLocaleString('en', { month: 'short' })
     const val = Math.round(p.total).toLocaleString('en')
     const selected = store.selectedMonth ? p.date.startsWith(store.selectedMonth) : isCurrent
-    return { key: p.date, month, val: isCurrent ? `${val}*` : val, pct: Math.round(p.total / maxVal * 100), current: isCurrent, selected }
+    return { key: p.date.slice(0, 7), month, val: isCurrent ? `${val}*` : val, pct: Math.round(p.total / maxVal * 100), current: isCurrent, selected }
   })
 })
 
@@ -631,6 +646,29 @@ const nextMonthName = computed(() => {
   color: var(--text-3);
   background: var(--surface);
   padding: 0 4px;
+}
+.ff-past-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font: 400 12.5px 'IBM Plex Sans';
+  color: var(--text-2);
+}
+.ff-past-banner button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font: 600 12px 'IBM Plex Sans';
+  cursor: pointer;
 }
 .ff-bar-col {
   cursor: pointer;
